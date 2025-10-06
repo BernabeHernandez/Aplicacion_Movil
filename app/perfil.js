@@ -1,193 +1,304 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native"
+import React, { useState, useEffect, useContext } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Modal,
+  TextInput,
+  Alert,
+} from "react-native";
+import axios from "axios";
+import { useNavigation } from "@react-navigation/native"; // Agregado para redirigir
+import { AuthContext } from "./AuthContext"; // Asegúrate de que la ruta sea correcta
 
 const Perfil = () => {
+  const { id_usuario } = useContext(AuthContext);
+  const [perfil, setPerfil] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({});
+  const navigation = useNavigation(); // Para redirigir al login
+
+  // Depurar id_usuario
+  useEffect(() => {
+    console.log("Valor de id_usuario:", id_usuario);
+    const fetchPerfil = async () => {
+      if (!id_usuario) {
+        setError("No se encontró el ID del usuario. Por favor, inicia sesión.");
+        setLoading(false);
+        // Redirigir a la pantalla de login
+        navigation.navigate("login"); // Asegúrate de que "Login" esté definido en tu StackNavigator
+        return;
+      }
+
+      try {
+        const response = await axios.get(`https://backendcentro.onrender.com/api/perfilcliente/${id_usuario}`);
+        console.log("Respuesta del backend (GET):", response.data);
+        const perfilData = response.data; // response.data es un objeto
+        if (!perfilData || !perfilData.id) {
+          throw new Error("No se encontraron datos del perfil");
+        }
+        setPerfil(perfilData);
+        setFormData({
+          nombre: perfilData.nombre || "",
+          apellidopa: perfilData.apellidopa || "",
+          apellidoma: perfilData.apellidoma || "",
+          gmail: perfilData.gmail || "",
+          user: perfilData.user || "",
+          telefono: perfilData.telefono || "",
+        });
+        setLoading(false);
+      } catch (err) {
+        setError("Error al cargar el perfil");
+        setLoading(false);
+        console.error("Error en fetchPerfil:", err);
+      }
+    };
+
+    fetchPerfil();
+  }, [id_usuario, navigation]);
+
+  // Función para actualizar el perfil
+  const handleUpdatePerfil = async () => {
+    try {
+      await axios.put(`https://backendcentro.onrender.com/api/perfilcliente/${id_usuario}`, formData);
+      console.log("Datos enviados en PUT:", formData);
+      // Recargar el perfil con un GET
+      const response = await axios.get(`https://backendcentro.onrender.com/api/perfilcliente/${id_usuario}`);
+      console.log("Respuesta del backend (GET después de PUT):", response.data);
+      const updatedPerfil = response.data;
+      setPerfil(updatedPerfil);
+      setShowModal(false);
+      Alert.alert("Éxito", "Perfil actualizado correctamente");
+    } catch (err) {
+      console.error("Error al actualizar el perfil:", err);
+      Alert.alert("Error", "No se pudo actualizar el perfil. Inténtalo de nuevo.");
+    }
+  };
+
+  // Función para cerrar el modal sin guardar
+  const handleCloseModal = () => {
+    setShowModal(false);
+  };
+
+  // Función para actualizar los campos del formulario
+  const handleInputChange = (field, value) => {
+    setFormData({ ...formData, [field]: value });
+  };
+
+  if (loading) {
+    return <Text>Cargando...</Text>;
+  }
+
+  if (error) {
+    return <Text>{error}</Text>;
+  }
+
   return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View>
-            <Text style={styles.headerTitle}>RehabBuddy</Text>
-            <Text style={styles.headerSubtitle}>Centro de Rehabilitación San Juan</Text>
-          </View>
-          <View style={styles.avatarContainer}>
-           
-          </View>
-        </View>
-      </View>
-
-      {/* Content */}
-      <View style={styles.content}>
-        {/* Title */}
-        <View style={styles.titleSection}>
-          <Text style={styles.title}>Mi Perfil</Text>
-          <Text style={styles.subtitle}>Gestiona tu cuenta y progreso</Text>
-        </View>
-
-        {/* Profile Card */}
-        <View style={styles.profileCard}>
-          <View style={styles.profileHeader}>
-            <View style={styles.profileAvatarContainer}>
-              <View style={styles.profileAvatar}>
-                <Text style={styles.profileAvatarIcon}>👤</Text>
-              </View>
-              <View style={styles.checkBadge}>
-                <Text style={styles.checkIcon}>✓</Text>
-              </View>
+    <>
+      <ScrollView style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.headerContent}>
+            <View>
+              <Text style={styles.headerTitle}>RehabBuddy</Text>
+              <Text style={styles.headerSubtitle}>Centro de Rehabilitación San Juan</Text>
             </View>
-            <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>María García</Text>
-              <Text style={styles.profileEmail}>2022115@gmail.edu.mx</Text>
-              <Text style={styles.memberSince}>📅 Miembro desde agosto de 2024</Text>
-            </View>
-          </View>
-
-          {/* Stats */}
-          <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <View style={[styles.statCircle, { backgroundColor: "#E8F5E8" }]}>
-                <Text style={styles.statIcon}>🏃</Text>
-              </View>
-              <Text style={styles.statNumber}>42</Text>
-              <Text style={styles.statLabel}>Rutinas</Text>
-            </View>
-            <View style={styles.statItem}>
-              <View style={[styles.statCircle, { backgroundColor: "#FFF9C4" }]}>
-                <Text style={styles.statIcon}>⚡</Text>
-              </View>
-              <Text style={styles.statNumber}>156</Text>
-              <Text style={styles.statLabel}>Sesiones</Text>
-            </View>
-            <View style={styles.statItem}>
-              <View style={[styles.statCircle, { backgroundColor: "#E3F2FD" }]}>
-                <Text style={styles.statIcon}>📅</Text>
-              </View>
-              <Text style={styles.statNumber}>7</Text>
-              <Text style={styles.statLabel}>Días seguidos</Text>
-            </View>
+            <View style={styles.avatarContainer}></View>
           </View>
         </View>
 
-        {/* Recent Achievements */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Logros Recientes</Text>
-          <View style={styles.achievementsGrid}>
-            <View style={styles.achievementItem}>
-              <View style={[styles.achievementIcon, { backgroundColor: "#FFF9C4" }]}>
-                <Text style={styles.achievementEmoji}>☀️</Text>
+        {/* Content */}
+        <View style={styles.content}>
+          {/* Title */}
+          <View style={styles.titleSection}>
+            <Text style={styles.title}>Mi Perfil</Text>
+            <Text style={styles.subtitle}>Gestiona tu cuenta y progreso</Text>
+          </View>
+
+          {/* Profile Card */}
+          <View style={styles.profileCard}>
+            <View style={styles.profileHeader}>
+              <View style={styles.profileAvatarContainer}>
+                <View style={styles.profileAvatar}>
+                  <Text style={styles.profileAvatarIcon}>👤</Text>
+                </View>
+                <View style={styles.checkBadge}>
+                  <Text style={styles.checkIcon}>✓</Text>
+                </View>
               </View>
-              <Text style={styles.achievementText}>Primera semana</Text>
+              <View style={styles.profileInfo}>
+                <Text style={styles.profileName}>
+                  {perfil ? `${perfil.nombre || ''} ${perfil.apellidopa || ''}` : "Cargando..."}
+                </Text>
+                <Text style={styles.profileEmail}>{perfil ? perfil.gmail || '' : "Cargando..."}</Text>
+              </View>
             </View>
-            <View style={styles.achievementItem}>
-              <View style={[styles.achievementIcon, { backgroundColor: "#FFE0B2" }]}>
-                <Text style={styles.achievementEmoji}>🔥</Text>
+
+            {/* Stats */}
+            <View style={styles.statsContainer}>
+              <View style={styles.statItem}>
+                <View style={[styles.statCircle, { backgroundColor: "#E8F5E8" }]}>
+                  <Text style={styles.statIcon}>🏃</Text>
+                </View>
+                <Text style={styles.statNumber}>42</Text>
+                <Text style={styles.statLabel}>Rutinas</Text>
               </View>
-              <Text style={styles.achievementText}>7 días consecutivos</Text>
-            </View>
-            <View style={styles.achievementItem}>
-              <View style={[styles.achievementIcon, { backgroundColor: "#FFF9C4" }]}>
-                <Text style={styles.achievementEmoji}>🏅</Text>
+              <View style={styles.statItem}>
+                <View style={[styles.statCircle, { backgroundColor: "#FFF9C4" }]}>
+                  <Text style={styles.statIcon}>⚡</Text>
+                </View>
+                <Text style={styles.statNumber}>156</Text>
+                <Text style={styles.statLabel}>Sesiones</Text>
               </View>
-              <Text style={styles.achievementText}>50 ejercicios</Text>
-            </View>
-            <View style={styles.achievementItem}>
-              <View style={[styles.achievementIcon, { backgroundColor: "#F5F5F5" }]}>
-                <Text style={styles.achievementEmoji}>👑</Text>
+              <View style={styles.statItem}>
+                <View style={[styles.statCircle, { backgroundColor: "#E3F2FD" }]}>
+                  <Text style={styles.statIcon}>📅</Text>
+                </View>
+                <Text style={styles.statNumber}>7</Text>
+                <Text style={styles.statLabel}>Días seguidos</Text>
               </View>
-              <Text style={[styles.achievementText, { color: "#999" }]}>Mes completo</Text>
             </View>
           </View>
-        </View>
 
-        {/* Menu Options */}
-        <View style={styles.menuSection}>
-          <TouchableOpacity style={styles.menuItem}>
-            <View style={styles.menuLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: "#E8F5E8" }]}>
-                <Text style={styles.menuIconText}>✏️</Text>
+          {/* Recent Achievements */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Logros Recientes</Text>
+            <View style={styles.achievementsGrid}>
+              <View style={styles.achievementItem}>
+                <View style={[styles.achievementIcon, { backgroundColor: "#FFF9C4" }]}>
+                  <Text style={styles.achievementEmoji}>☀️</Text>
+                </View>
+                <Text style={styles.achievementText}>Primera semana</Text>
               </View>
-              <View>
-                <Text style={styles.menuTitle}>Editar Perfil</Text>
-                <Text style={styles.menuSubtitle}>Actualiza tu información personal</Text>
+              <View style={styles.achievementItem}>
+                <View style={[styles.achievementIcon, { backgroundColor: "#FFE0B2" }]}>
+                  <Text style={styles.achievementEmoji}>🔥</Text>
+                </View>
+                <Text style={styles.achievementText}>7 días consecutivos</Text>
+              </View>
+              <View style={styles.achievementItem}>
+                <View style={[styles.achievementIcon, { backgroundColor: "#FFF9C4" }]}>
+                  <Text style={styles.achievementEmoji}>🏅</Text>
+                </View>
+                <Text style={styles.achievementText}>50 ejercicios</Text>
+              </View>
+              <View style={styles.achievementItem}>
+                <View style={[styles.achievementIcon, { backgroundColor: "#F5F5F5" }]}>
+                  <Text style={styles.achievementEmoji}>👑</Text>
+                </View>
+                <Text style={[styles.achievementText, { color: "#999" }]}>Mes completo</Text>
               </View>
             </View>
-            <Text style={styles.menuArrow}>›</Text>
-          </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <View style={styles.menuLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: "#FFF9C4" }]}>
-                <Text style={styles.menuIconText}>🔔</Text>
+          {/* Menu Options */}
+          <View style={styles.menuSection}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => setShowModal(true)}
+            >
+              <View style={styles.menuLeft}>
+                <View style={[styles.menuIcon, { backgroundColor: "#E8F5E8" }]}>
+                  <Text style={styles.menuIconText}>✏️</Text>
+                </View>
+                <View>
+                  <Text style={styles.menuTitle}>Editar Perfil</Text>
+                  <Text style={styles.menuSubtitle}>Actualiza tu información personal</Text>
+                </View>
               </View>
-              <View>
-                <Text style={styles.menuTitle}>Notificaciones</Text>
-                <Text style={styles.menuSubtitle}>Configurar recordatorios y alertas</Text>
-              </View>
-            </View>
-            <Text style={styles.menuArrow}>›</Text>
-          </TouchableOpacity>
+              <Text style={styles.menuArrow}>›</Text>
+            </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <View style={styles.menuLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: "#E3F2FD" }]}>
-                <Text style={styles.menuIconText}>🛡️</Text>
-              </View>
-              <View>
-                <Text style={styles.menuTitle}>Privacidad y Seguridad</Text>
-                <Text style={styles.menuSubtitle}>Gestiona tu privacidad</Text>
-              </View>
+          {/* Center Info */}
+          <View style={styles.centerInfo}>
+            <Text style={styles.centerTitle}>Centro de Rehabilitación San Juan</Text>
+            <View style={styles.contactItem}>
+              <Text style={styles.contactIcon}>📞</Text>
+              <Text style={styles.contactText}>+1 (555) 123-4567</Text>
             </View>
-            <Text style={styles.menuArrow}>›</Text>
-          </TouchableOpacity>
+            <View style={styles.contactItem}>
+              <Text style={styles.contactIcon}>✉️</Text>
+              <Text style={styles.contactText}>info@centrosanjuan.com</Text>
+            </View>
+          </View>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <View style={styles.menuLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: "#F3E5F5" }]}>
-                <Text style={styles.menuIconText}>⚙️</Text>
-              </View>
-              <View>
-                <Text style={styles.menuTitle}>Configuración</Text>
-                <Text style={styles.menuSubtitle}>Preferencias de la aplicación</Text>
-              </View>
-            </View>
-            <Text style={styles.menuArrow}>›</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.menuItem}>
-            <View style={styles.menuLeft}>
-              <View style={[styles.menuIcon, { backgroundColor: "#E8F5E8" }]}>
-                <Text style={styles.menuIconText}>❓</Text>
-              </View>
-              <View>
-                <Text style={styles.menuTitle}>Ayuda y Soporte</Text>
-                <Text style={styles.menuSubtitle}>Obtén ayuda o contacta soporte</Text>
-              </View>
-            </View>
-            <Text style={styles.menuArrow}>›</Text>
+          {/* Logout Button */}
+          <TouchableOpacity style={styles.logoutButton}>
+            <Text style={styles.logoutText}>🔓 Cerrar Sesión</Text>
           </TouchableOpacity>
         </View>
+      </ScrollView>
 
-        {/* Center Info */}
-        <View style={styles.centerInfo}>
-          <Text style={styles.centerTitle}>Centro de Rehabilitación San Juan</Text>
-          <View style={styles.contactItem}>
-            <Text style={styles.contactIcon}>📞</Text>
-            <Text style={styles.contactText}>+1 (555) 123-4567</Text>
-          </View>
-          <View style={styles.contactItem}>
-            <Text style={styles.contactIcon}>✉️</Text>
-            <Text style={styles.contactText}>info@centrosanjuan.com</Text>
+      {/* Modal para editar perfil */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showModal}
+        onRequestClose={handleCloseModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Editar Perfil</Text>
+            
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Nombre"
+              value={formData.nombre}
+              onChangeText={(text) => handleInputChange("nombre", text)}
+            />
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Apellido Paterno"
+              value={formData.apellidopa}
+              onChangeText={(text) => handleInputChange("apellidopa", text)}
+            />
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Apellido Materno"
+              value={formData.apellidoma}
+              onChangeText={(text) => handleInputChange("apellidoma", text)}
+            />
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Correo Electrónico"
+              value={formData.gmail}
+              onChangeText={(text) => handleInputChange("gmail", text)}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Nombre de usuario"
+              value={formData.user}
+              onChangeText={(text) => handleInputChange("user", text)}
+            />
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Teléfono"
+              value={formData.telefono}
+              onChangeText={(text) => handleInputChange("telefono", text)}
+              keyboardType="phone-pad"
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.modalSaveButton} onPress={handleUpdatePerfil}>
+                <Text style={styles.modalSaveButtonText}>Guardar Cambios</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalCancelButton} onPress={handleCloseModal}>
+                <Text style={styles.modalCancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-
-        {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutButton}>
-          <Text style={styles.logoutText}>🔓 Cerrar Sesión</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
-  )
-}
+      </Modal>
+    </>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -217,19 +328,6 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     position: "relative",
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "bold",
   },
   content: {
     padding: 20,
@@ -459,6 +557,68 @@ const styles = StyleSheet.create({
     color: "#E91E63",
     fontWeight: "600",
   },
-})
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    borderRadius: 15,
+    padding: 20,
+    width: "90%",
+    maxHeight: "80%",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  modalInput: {
+    backgroundColor: "#F8F9FA",
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 20,
+  },
+  modalSaveButton: {
+    flex: 1,
+    backgroundColor: "#7CB342",
+    borderRadius: 10,
+    padding: 15,
+    alignItems: "center",
+    marginRight: 10,
+  },
+  modalSaveButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  modalCancelButton: {
+    flex: 1,
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 15,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E91E63",
+    marginLeft: 10,
+  },
+  modalCancelButtonText: {
+    color: "#E91E63",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+});
 
-export default Perfil
+export default Perfil;
