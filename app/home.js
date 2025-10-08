@@ -1,6 +1,79 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native"
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { useContext, useEffect, useState } from "react";
+import { useNavigation } from "@react-navigation/native"; // Añadido para navegación
+import { AuthContext } from "./AuthContext"; // Asegúrate de que la ruta al AuthContext sea correcta
 
 const Home = () => {
+  const { id_usuario } = useContext(AuthContext);
+  const navigation = useNavigation(); // Hook para navegación
+  const [userName, setUserName] = useState("Usuario"); // Valor por defecto para el nombre
+  const [routinesProgress, setRoutinesProgress] = useState({ completed: 0, total: 0 }); // Progreso de rutinas
+  const [recommendedRoutines, setRecommendedRoutines] = useState([]); // Rutinas recomendadas
+
+  useEffect(() => {
+    // Obtener nombre del usuario
+    const fetchUserProfile = async () => {
+      try {
+        const response = await fetch(`https://backendcentro.onrender.com/api/perfilcliente/${id_usuario}`);
+        const data = await response.json();
+        if (response.ok && data.nombre) {
+          setUserName(data.nombre);
+        } else {
+          console.error("Error al obtener el perfil:", data.error || "Sin datos");
+        }
+      } catch (error) {
+        console.error("Error en la llamada a la API de perfil:", error);
+      }
+    };
+
+    // Obtener rutinas asignadas del usuario
+    const fetchRoutines = async () => {
+      try {
+        const response = await fetch(`https://backendcentro.onrender.com/api/rutinas/usuario/${id_usuario}`);
+        const data = await response.json();
+        if (response.ok) {
+          // Filtrar rutinas de hoy (basado en fecha_inicio)
+          const today = new Date().toISOString().split("T")[0]; // Fecha actual en formato YYYY-MM-DD
+          const todayRoutines = data.filter((routine) => {
+            const routineDate = routine.fecha_inicio ? new Date(routine.fecha_inicio).toISOString().split("T")[0] : null;
+            return routineDate === today;
+          });
+
+          // Contar rutinas completadas y totales
+          const completed = todayRoutines.filter((routine) => routine.estado === "completada").length;
+          const total = todayRoutines.length;
+          setRoutinesProgress({ completed, total });
+
+          // Filtrar rutinas pendientes para "Rutinas Recomendadas"
+          const pendingRoutines = todayRoutines
+            .filter((routine) => routine.estado === "pendiente")
+            .map((routine) => ({
+              id: routine.id_rutina,
+              titulo: routine.titulo,
+              descripcion: routine.descripcion,
+              duracion_total: routine.duracion_total || 15, // Valor por defecto si no hay duración
+              dificultad: routine.dificultad || "Fácil", // Valor por defecto si no hay dificultad
+            }));
+
+          setRecommendedRoutines(pendingRoutines);
+        } else {
+          console.error("Error al obtener rutinas:", data.error || "Sin datos");
+        }
+      } catch (error) {
+        console.error("Error en la llamada a la API de rutinas:", error);
+      }
+    };
+
+    if (id_usuario) {
+      fetchUserProfile();
+      fetchRoutines();
+    }
+  }, [id_usuario]);
+
+  // Calcular porcentaje de progreso
+  const progressPercentage = routinesProgress.total > 0 ? Math.round((routinesProgress.completed / routinesProgress.total) * 100) : 0;
+  const pendingRoutines = routinesProgress.total - routinesProgress.completed;
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
@@ -17,7 +90,7 @@ const Home = () => {
       <View style={styles.content}>
         {/* Greeting */}
         <View style={styles.greetingSection}>
-          <Text style={styles.greeting}>¡Hola, María!</Text>
+          <Text style={styles.greeting}>¡Hola, {userName}!</Text>
           <Text style={styles.subGreeting}>Continuemos con tu recuperación</Text>
         </View>
 
@@ -31,7 +104,9 @@ const Home = () => {
             </View>
             <View>
               <Text style={styles.statLabel}>Hoy</Text>
-              <Text style={styles.statValue}>2/4 rutinas</Text>
+              <Text style={styles.statValue}>
+                {routinesProgress.completed}/{routinesProgress.total} rutinas
+              </Text>
             </View>
           </View>
 
@@ -52,70 +127,48 @@ const Home = () => {
         <View style={styles.progressSection}>
           <View style={styles.progressHeader}>
             <Text style={styles.progressTitle}>Progreso de Hoy</Text>
-            <Text style={styles.progressPercentage}>50%</Text>
+            <Text style={styles.progressPercentage}>{progressPercentage}%</Text>
           </View>
           <View style={styles.progressBarContainer}>
             <View style={styles.progressBar}>
-              <View style={styles.progressFill} />
+              <View style={[styles.progressFill, { width: `${progressPercentage}%` }]} />
             </View>
           </View>
-          <Text style={styles.progressSubtext}>2 rutinas pendientes</Text>
-        </View>
-
-        {/* Reminder */}
-        <View style={styles.reminderContainer}>
-          <View style={styles.reminderIcon}>
-            <Text style={styles.reminderIconText}>⏰</Text>
-          </View>
-          <View style={styles.reminderContent}>
-            <Text style={styles.reminderTitle}>Próximo recordatorio</Text>
-            <Text style={styles.reminderTime}>14:30 - Estiramiento Cervical</Text>
-          </View>
+          <Text style={styles.progressSubtext}>
+            {pendingRoutines} {pendingRoutines === 1 ? "rutina pendiente" : "rutinas pendientes"}
+          </Text>
         </View>
 
         {/* Recommended Routines */}
         <View style={styles.routinesSection}>
           <Text style={styles.routinesTitle}>Rutinas Recomendadas</Text>
-
-          {/* Routine 1 */}
-          <View style={styles.routineCard}>
-            <View style={styles.routineContent}>
-              <Text style={styles.routineName}>Estiramiento Cervical Básico</Text>
-              <Text style={styles.routineDescription}>Ejercicios suaves para aliviar la tensión cervical</Text>
-              <View style={styles.routineDetails}>
-                <View style={styles.routineDetail}>
-                  <Text style={styles.routineDetailIcon}>⏱</Text>
-                  <Text style={styles.routineDetailText}>15 min</Text>
+          {recommendedRoutines.length > 0 ? (
+            recommendedRoutines.map((routine) => (
+              <View key={routine.id} style={styles.routineCard}>
+                <View style={styles.routineContent}>
+                  <Text style={styles.routineName}>{routine.titulo}</Text>
+                  <Text style={styles.routineDescription}>{routine.descripcion}</Text>
+                  <View style={styles.routineDetails}>
+                    <View style={styles.routineDetail}>
+                      <Text style={styles.routineDetailIcon}>⏱</Text>
+                      <Text style={styles.routineDetailText}>{routine.duracion_total} min</Text>
+                    </View>
+                    <View style={styles.routineDetail}>
+                      <Text style={styles.routineDetailText}>{routine.dificultad}</Text>
+                    </View>
+                  </View>
                 </View>
-                <View style={styles.routineDetail}>
-                  <Text style={styles.routineDetailText}>Fácil</Text>
-                </View>
+                <TouchableOpacity
+                  style={styles.startButton}
+                  onPress={() => navigation.navigate('RutinaDetalle', { id_rutina: routine.id })}
+                >
+                  <Text style={styles.startButtonText}>▶ Iniciar</Text>
+                </TouchableOpacity>
               </View>
-            </View>
-            <TouchableOpacity style={styles.startButton}>
-              <Text style={styles.startButtonText}>▶ Iniciar</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Routine 2 */}
-          <View style={styles.routineCard}>
-            <View style={styles.routineContent}>
-              <Text style={styles.routineName}>Fortalecimiento Lumbar</Text>
-              <Text style={styles.routineDescription}>Ejercicios para fortalecer la zona lumbar</Text>
-              <View style={styles.routineDetails}>
-                <View style={styles.routineDetail}>
-                  <Text style={styles.routineDetailIcon}>⏱</Text>
-                  <Text style={styles.routineDetailText}>20 min</Text>
-                </View>
-                <View style={styles.routineDetail}>
-                  <Text style={styles.routineDetailText}>Medio</Text>
-                </View>
-              </View>
-            </View>
-            <TouchableOpacity style={styles.startButton}>
-              <Text style={styles.startButtonText}>▶ Iniciar</Text>
-            </TouchableOpacity>
-          </View>
+            ))
+          ) : (
+            <Text style={styles.noRoutinesText}>No hay rutinas asignadas para hoy</Text>
+          )}
         </View>
 
         {/* Motivational Message */}
@@ -132,8 +185,8 @@ const Home = () => {
         </View>
       </View>
     </ScrollView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -161,19 +214,6 @@ const styles = StyleSheet.create({
     color: "white",
     opacity: 0.9,
     marginTop: 2,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "bold",
   },
   content: {
     padding: 20,
@@ -266,40 +306,12 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: "100%",
-    width: "50%",
     backgroundColor: "#689F38",
     borderRadius: 4,
   },
   progressSubtext: {
     fontSize: 14,
     color: "#666",
-  },
-  reminderContainer: {
-    flexDirection: "row",
-    backgroundColor: "#FFF9C4",
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 25,
-    alignItems: "center",
-  },
-  reminderIcon: {
-    marginRight: 12,
-  },
-  reminderIconText: {
-    fontSize: 20,
-  },
-  reminderContent: {
-    flex: 1,
-  },
-  reminderTitle: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 2,
-  },
-  reminderTime: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
   },
   routinesSection: {
     marginBottom: 25,
@@ -396,6 +408,11 @@ const styles = StyleSheet.create({
     color: "#666",
     lineHeight: 20,
   },
-})
+  noRoutinesText: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+  },
+});
 
-export default Home
+export default Home;

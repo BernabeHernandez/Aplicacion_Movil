@@ -45,16 +45,7 @@ const Notificaciones = () => {
       read: true,
       icon: "📅",
     },
-    {
-      id: 5,
-      type: "sistema",
-      title: "Actualización disponible",
-      message: "Nueva versión de RehabBuddy con mejoras en las rutinas",
-      time: "16:30",
-      date: "Ayer",
-      read: true,
-      icon: "🔄",
-    },
+ 
     {
       id: 6,
       type: "motivacion",

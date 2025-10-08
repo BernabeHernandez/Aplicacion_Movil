@@ -1,32 +1,38 @@
 "use client"
 
 import { useRoute } from "@react-navigation/native"
-import { useEffect, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import { Image, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { AuthContext } from "./AuthContext" // Ajusta la ruta según tu estructura
 
 const RutinaDetalle = () => {
   const route = useRoute()
-  const { id_rutina } = route.params || {} // Obtener id_rutina de los parámetros de navegación
+  const { id_rutina: id_rutina_param } = route.params || {}
+  const { id_usuario } = useContext(AuthContext)
+
+  const id_rutina = Number(id_rutina_param)
 
   const [currentExercise, setCurrentExercise] = useState(0)
   const [isRunning, setIsRunning] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState(0)
   const [rutina, setRutina] = useState(null)
+  const [asignacionId, setAsignacionId] = useState(null)
+  const [progresos, setProgresos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  // Mapear pasos a exercises usando la estructura normalizada
+  const BASE_URL = "https://backendcentro.onrender.com"
+
   const exercises = Array.isArray(rutina?.pasos)
     ? rutina.pasos.map((paso, index) => ({
         id: paso.id_paso || index + 1,
         title: paso.nombre || "Sin título",
         description: paso.descripcion || "Sin descripción",
-        // tiempo_estimado viene en minutos, convertir a segundos si es un número válido
         duration: typeof paso.tiempo_estimado === 'number' && !isNaN(paso.tiempo_estimado)
           ? paso.tiempo_estimado * 60
           : 180,
-        instructions: [], // Si tienes instrucciones adicionales, agrégalas aquí
+        instructions: [],
         tips: [
           "Realiza los movimientos lentamente",
           "No fuerces si sientes dolor",
@@ -38,42 +44,109 @@ const RutinaDetalle = () => {
 
   const currentExerciseData = exercises[currentExercise] || {}
   const totalExercises = exercises.length
-  // Si ya se completó el último paso, progreso 100%
-  const isCompleted = currentExercise === totalExercises - 1 && !isRunning && !isPaused && timeRemaining === 0;
-  const progress = totalExercises > 0
-    ? isCompleted
-      ? 100
-      : ((currentExercise + (isRunning ? 0.5 : 0)) / totalExercises) * 100
-    : 0;
+  const completedSteps = progresos.filter(p => p.estado === 'completado').length
+  const isCompleted = completedSteps === totalExercises && totalExercises > 0
+  const progress = totalExercises > 0 ? (completedSteps / totalExercises) * 100 : 0
 
-  // Reiniciar rutina
-  const handleRepeat = () => {
-    setCurrentExercise(0);
-    setIsRunning(false);
-    setIsPaused(false);
-    setTimeRemaining(exercises[0]?.duration || 0);
-  };
-
-  // Obtener datos de la rutina desde la API
+  // Verificar parámetros y autenticación
   useEffect(() => {
-    const fetchRutina = async () => {
+    console.log('Parámetros recibidos:', { id_rutina, id_usuario })
+    if (!id_rutina) {
+      setError('Falta el parámetro id_rutina')
+      setLoading(false)
+    }
+    if (!id_usuario) {
+      setError('Usuario no autenticado. Por favor, inicia sesión.')
+      setLoading(false)
+    }
+  }, [id_rutina, id_usuario])
+
+  // Cargar asignación
+  useEffect(() => {
+    const checkExistingAsignacion = async () => {
       try {
-        setLoading(true)
-        console.log(`Fetching rutina with id ${id_rutina}`)
-        const response = await fetch(`https://backendcentro.onrender.com/api/rutinas/${id_rutina}`, {
+        console.log('Buscando asignación existente para id_usuario:', id_usuario, 'id_rutina:', id_rutina)
+        const response = await fetch(`${BASE_URL}/api/asignaciones_rutinas`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
         })
-        console.log(`Response status: ${response.status}`)
         if (!response.ok) {
           const errorText = await response.text()
-          console.error(`API error: ${errorText}`)
+          throw new Error(`Error al buscar asignaciones: ${response.status} ${errorText}`)
+        }
+        const asignaciones = await response.json()
+        console.log('Asignaciones encontradas:', asignaciones)
+        const asignacionExistente = asignaciones.find(
+          a => a.id_usuario === id_usuario && a.id_rutina === id_rutina && a.estado === 'en_progreso'
+        )
+        if (asignacionExistente) {
+          console.log('Asignación existente encontrada:', asignacionExistente)
+          setAsignacionId(asignacionExistente.id)
+        } else {
+          createAsignacion()
+        }
+      } catch (err) {
+        console.error('Error checking asignacion:', err.message)
+        setError('Error al verificar asignación existente')
+        createAsignacion()
+      }
+    }
+
+    const createAsignacion = async () => {
+      try {
+        console.log('Creando asignación con id_usuario:', id_usuario, 'id_rutina:', id_rutina)
+        const response = await fetch(`${BASE_URL}/api/asignaciones_rutinas`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id_usuario,
+            id_rutina,
+            estado: 'pendiente',
+            fecha_inicio: new Date().toISOString().split('T')[0],
+            progreso_actual: 0,
+            duracion_total: 0,
+          }),
+        })
+        if (!response.ok) {
+          const errorText = await response.text()
+          throw new Error(`Error al crear asignación: ${response.status} ${errorText}`)
+        }
+        const data = await response.json()
+        console.log('Asignación creada:', data)
+        setAsignacionId(data.id)
+      } catch (err) {
+        console.error('Error creating asignacion:', err.message)
+        setError('Error al iniciar la asignación de la rutina')
+      }
+    }
+
+    if (id_usuario && id_rutina && !asignacionId) {
+      checkExistingAsignacion()
+    }
+  }, [id_usuario, id_rutina, asignacionId])
+
+  // Cargar rutina
+  useEffect(() => {
+    const fetchRutina = async () => {
+      try {
+        setLoading(true)
+        console.log('Cargando rutina con id_rutina:', id_rutina)
+        const response = await fetch(`${BASE_URL}/api/rutinas/${id_rutina}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+        if (!response.ok) {
+          const errorText = await response.text()
           throw new Error(`Error al cargar la rutina: ${response.status} ${errorText}`)
         }
         const data = await response.json()
-        console.log('API response:', data)
+        console.log('Rutina cargada:', data)
         setRutina(data)
         setLoading(false)
       } catch (err) {
@@ -91,14 +164,59 @@ const RutinaDetalle = () => {
     }
   }, [id_rutina])
 
-  // Solo reiniciar el temporizador cuando cambia el ejercicio
+  // Cargar progresos
   useEffect(() => {
-    if (currentExerciseData.duration) {
+    const fetchProgresos = async () => {
+      if (!asignacionId || !rutina) return; // Esperar a que rutina esté cargada
+      try {
+        console.log('Ejecutando fetchProgresos con asignacionId:', asignacionId)
+        await new Promise(resolve => setTimeout(resolve, 500))
+        const response = await fetch(`${BASE_URL}/api/progresos/asignacion/${asignacionId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+        console.log('Respuesta del fetch progresos:', response.status)
+        if (!response.ok) {
+          const errorText = await response.text()
+          throw new Error(`Error al cargar progresos: ${response.status} ${errorText}`)
+        }
+        const data = await response.json()
+        console.log('Progresos cargados:', data)
+        if (data && Array.isArray(data) && data.length > 0) {
+          setProgresos(data)
+          const nextStepIndex = data.findIndex(p => p.estado !== 'completado')
+          const newIndex = nextStepIndex >= 0 ? nextStepIndex : data.length - 1
+          console.log('Calculando currentExercise:', { nextStepIndex, newIndex, totalExercises: exercises.length })
+          if (newIndex >= 0 && newIndex < exercises.length) {
+            setCurrentExercise(newIndex)
+          } else {
+            setError('El índice del ejercicio no es válido o no coincide con los pasos de la rutina')
+          }
+        } else {
+          setError('No se encontraron progresos para esta asignación')
+        }
+      } catch (err) {
+        console.error('Fetch progresos error:', err.message)
+        setError(`Error al cargar progresos: ${err.message}`)
+      }
+    }
+
+    if (asignacionId && rutina) {
+      fetchProgresos()
+    }
+  }, [asignacionId, rutina, exercises.length])
+
+  // Actualizar tiempo restante
+  useEffect(() => {
+    console.log('Estado actual:', { progresos, currentExercise, totalExercises })
+    if (currentExerciseData.duration && progresos[currentExercise]) {
       setTimeRemaining(currentExerciseData.duration)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentExercise])
+  }, [currentExercise, currentExerciseData.duration, progresos])
 
+  // Temporizador
   useEffect(() => {
     let interval = null
     if (isRunning && !isPaused && timeRemaining > 0) {
@@ -107,9 +225,9 @@ const RutinaDetalle = () => {
       }, 1000)
     } else if (timeRemaining === 0 && isRunning) {
       setIsRunning(false)
-      if (currentExercise < totalExercises - 1) {
+      if (currentExercise < totalExercises - 1 && progresos[currentExercise]) {
         setTimeout(() => {
-          handleNext()
+          handleComplete()
         }, 1000)
       }
     }
@@ -122,26 +240,136 @@ const RutinaDetalle = () => {
     return `${mins}:${secs.toString().padStart(2, "0")}`
   }
 
-  const handleStart = () => {
+  const handleStart = async () => {
+    if (progresos.length === 0) {
+      setError('Progresos no cargados. Por favor, espera un momento.')
+      console.error('Error en handleStart: progresos vacío')
+      return
+    }
+    if (!progresos[currentExercise]) {
+      setError('Índice de ejercicio inválido. Por favor, recarga la pantalla.')
+      console.error('Error en handleStart:', { currentExercise, progresos })
+      return
+    }
+    console.log('Iniciando ejercicio:', { currentExercise, progreso: progresos[currentExercise] })
     setIsRunning(true)
     setIsPaused(false)
+    if (progresos[currentExercise]?.estado === 'pendiente') {
+      try {
+        const response = await fetch(`${BASE_URL}/api/progresos/${progresos[currentExercise].id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            estado: 'en_progreso',
+          }),
+        })
+        if (!response.ok) {
+          const errorText = await response.text()
+          throw new Error(`Error al actualizar progreso: ${response.status} ${errorText}`)
+        }
+        setProgresos(prev => {
+          const newProgresos = [...prev]
+          newProgresos[currentExercise] = {
+            ...newProgresos[currentExercise],
+            estado: 'en_progreso',
+          }
+          return newProgresos
+        })
+        if (currentExercise === 0) {
+          await fetch(`${BASE_URL}/api/asignaciones_rutinas/${asignacionId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              estado: 'en_progreso',
+            }),
+          })
+        }
+      } catch (err) {
+        console.error('Error updating progreso:', err.message)
+        setError('Error al iniciar el ejercicio')
+      }
+    }
   }
 
   const handlePause = () => {
     setIsPaused(true)
   }
 
-  const handleComplete = () => {
-    setIsRunning(false)
-    setIsPaused(false)
-    if (currentExercise < totalExercises - 1) {
-      handleNext()
+  const handleComplete = async () => {
+    if (progresos.length === 0) {
+      setError('Progresos no cargados. Por favor, espera un momento.')
+      console.error('Error en handleComplete: progresos vacío')
+      return
     }
-    // Si es el último paso, no hacer nada más, la barra marcará 100%
+    if (!progresos[currentExercise]) {
+      setError('Índice de ejercicio inválido. Por favor, recarga la pantalla.')
+      console.error('Error en handleComplete:', { currentExercise, progresos })
+      return
+    }
+    console.log('Completando ejercicio:', { currentExercise, progreso: progresos[currentExercise] })
+    try {
+      const tiempo_usado = currentExerciseData.duration - timeRemaining
+      const response = await fetch(`${BASE_URL}/api/progresos/${progresos[currentExercise].id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fecha_completado: new Date().toISOString(),
+          tiempo_usado,
+          estado: 'completado',
+        }),
+      })
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Error al registrar progreso: ${response.status} ${errorText}`)
+      }
+      setProgresos(prev => {
+        const newProgresos = [...prev]
+        newProgresos[currentExercise] = {
+          ...newProgresos[currentExercise],
+          fecha_completado: new Date().toISOString(),
+          tiempo_usado,
+          estado: 'completado',
+        }
+        return newProgresos
+      })
+
+      const newCompletedSteps = progresos.filter(p => p.estado === 'completado').length + 1
+      const nuevoProgreso = totalExercises > 0 ? (newCompletedSteps / totalExercises) * 100 : 0
+      const duracion_total = progresos.reduce((sum, p) => sum + (p.tiempo_usado || 0), 0) + tiempo_usado
+      const estadoAsignacion = newCompletedSteps === totalExercises ? 'completada' : 'en_progreso'
+
+      await fetch(`${BASE_URL}/api/asignaciones_rutinas/${asignacionId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          progreso_actual: nuevoProgreso,
+          estado: estadoAsignacion,
+          duracion_total,
+          fecha_fin: estadoAsignacion === 'completada' ? new Date().toISOString().split('T')[0] : null,
+        }),
+      })
+
+      setIsRunning(false)
+      setIsPaused(false)
+      if (currentExercise < totalExercises - 1 && currentExercise < progresos.length - 1) {
+        setCurrentExercise(currentExercise + 1)
+      }
+    } catch (err) {
+      console.error('Error completing step:', err.message)
+      setError('Error al completar el ejercicio')
+    }
   }
 
   const handleNext = () => {
-    if (currentExercise < totalExercises - 1) {
+    if (currentExercise < totalExercises - 1 && currentExercise < progresos.length - 1) {
       setCurrentExercise(currentExercise + 1)
       setIsRunning(false)
       setIsPaused(false)
@@ -153,6 +381,40 @@ const RutinaDetalle = () => {
       setCurrentExercise(currentExercise - 1)
       setIsRunning(false)
       setIsPaused(false)
+    }
+  }
+
+  const handleRepeat = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/asignaciones_rutinas`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id_usuario,
+          id_rutina,
+          estado: 'pendiente',
+          fecha_inicio: new Date().toISOString().split('T')[0],
+          progreso_actual: 0,
+          duracion_total: 0,
+        }),
+      })
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Error al crear nueva asignación: ${response.status} ${errorText}`)
+      }
+      const data = await response.json()
+      console.log('Nueva asignación creada para repetir:', data)
+      setAsignacionId(data.id)
+      setProgresos([])
+      setCurrentExercise(0)
+      setIsRunning(false)
+      setIsPaused(false)
+      setTimeRemaining(exercises[0]?.duration || 0)
+    } catch (err) {
+      console.error('Error repeating routine:', err.message)
+      setError('Error al repetir la rutina')
     }
   }
 
@@ -175,14 +437,10 @@ const RutinaDetalle = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#7CB342" barStyle="light-content" />
-
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>RehabBuddy</Text>
         <Text style={styles.headerSubtitle}>Centro de Rehabilitación San Juan</Text>
       </View>
-
-      {/* Navigation Header */}
       <View style={styles.navHeader}>
         <TouchableOpacity style={styles.backButton}>
           <Text style={styles.backArrow}>←</Text>
@@ -195,8 +453,6 @@ const RutinaDetalle = () => {
         </View>
         <Text style={styles.difficulty}>Fácil</Text>
       </View>
-
-      {/* Progress Bar */}
       <View style={styles.progressContainer}>
         <Text style={styles.progressLabel}>Progreso</Text>
         <Text style={styles.progressPercent}>{Math.round(progress)}%</Text>
@@ -204,9 +460,7 @@ const RutinaDetalle = () => {
       <View style={styles.progressBar}>
         <View style={[styles.progressFill, { width: `${progress}%` }]} />
       </View>
-
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Exercise Info (Mostrar todos los pasos) */}
         <View style={styles.exerciseInfo}>
           {exercises.map((exercise, index) => (
             <View key={exercise.id} style={styles.stepContainer}>
@@ -226,16 +480,12 @@ const RutinaDetalle = () => {
             </View>
           ))}
         </View>
-
-        {/* Timer */}
         <View style={styles.timerContainer}>
           <View style={styles.timerCircle}>
             <Text style={styles.timerText}>{formatTime(isRunning ? timeRemaining : currentExerciseData.duration)}</Text>
           </View>
           <Text style={styles.timerLabel}>{isRunning ? "Tiempo restante" : "Duración del ejercicio"}</Text>
         </View>
-
-        {/* Instructions */}
         {!isRunning && exercises.length > 0 && (
           <>
             <Text style={styles.sectionTitle}>Instrucciones:</Text>
@@ -249,8 +499,6 @@ const RutinaDetalle = () => {
             ))}
           </>
         )}
-
-        {/* Tips */}
         {!isRunning && exercises.length > 0 && (
           <View style={styles.tipsContainer}>
             <View style={styles.tipsHeader}>
@@ -264,15 +512,17 @@ const RutinaDetalle = () => {
             ))}
           </View>
         )}
-
-        {/* Action Buttons */}
         <View style={styles.actionButtons}>
           {isCompleted ? (
             <TouchableOpacity style={styles.startButton} onPress={handleRepeat}>
               <Text style={styles.startButtonText}>↻ Repetir Ejercicio</Text>
             </TouchableOpacity>
           ) : !isRunning ? (
-            <TouchableOpacity style={styles.startButton} onPress={handleStart}>
+            <TouchableOpacity
+              style={[styles.startButton, progresos.length === 0 && styles.startButtonDisabled]}
+              onPress={handleStart}
+              disabled={progresos.length === 0}
+            >
               <Text style={styles.startButtonText}>▶ Comenzar Ejercicio</Text>
             </TouchableOpacity>
           ) : (
@@ -286,9 +536,6 @@ const RutinaDetalle = () => {
             </View>
           )}
         </View>
-
-        {/* Navigation */}
-        {/* Ocultar navegación si ya se completó la rutina */}
         {!isCompleted && (
           <View style={styles.navigation}>
             <TouchableOpacity
@@ -300,14 +547,13 @@ const RutinaDetalle = () => {
                 ↻ Anterior
               </Text>
             </TouchableOpacity>
-
             <TouchableOpacity
-              style={[styles.navButton, currentExercise === totalExercises - 1 && styles.navButtonDisabled]}
+              style={[styles.navButton, (currentExercise >= totalExercises - 1 || currentExercise >= progresos.length - 1) && styles.navButtonDisabled]}
               onPress={handleNext}
-              disabled={currentExercise === totalExercises - 1}
+              disabled={currentExercise >= totalExercises - 1 || currentExercise >= progresos.length - 1}
             >
               <Text
-                style={[styles.navButtonText, currentExercise === totalExercises - 1 && styles.navButtonTextDisabled]}
+                style={[styles.navButtonText, (currentExercise >= totalExercises - 1 || currentExercise >= progresos.length - 1) && styles.navButtonTextDisabled]}
               >
                 Siguiente ⤷
               </Text>
@@ -342,20 +588,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     marginTop: 2,
-  },
-  avatar: {
-    position: "absolute",
-    right: 20,
-    top: 15,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarText: {
-    fontSize: 20,
   },
   navHeader: {
     flexDirection: "row",
@@ -460,7 +692,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   currentExerciseTitle: {
-    color: "#7CB342", // Resaltar el ejercicio actual
+    color: "#7CB342",
   },
   exerciseDescription: {
     fontSize: 16,
@@ -564,6 +796,10 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 8,
     alignItems: "center",
+  },
+  startButtonDisabled: {
+    backgroundColor: "#cccccc",
+    opacity: 0.5,
   },
   startButtonText: {
     color: "white",
