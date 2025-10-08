@@ -10,8 +10,8 @@ import {
   Alert,
 } from "react-native";
 import axios from "axios";
-import { useNavigation } from "@react-navigation/native"; // Agregado para redirigir
-import { AuthContext } from "./AuthContext"; // Asegúrate de que la ruta sea correcta
+import { useNavigation } from "@react-navigation/native"; 
+import { AuthContext } from "./AuthContext"; 
 
 const Perfil = () => {
   const { id_usuario } = useContext(AuthContext);
@@ -20,17 +20,15 @@ const Perfil = () => {
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({});
-  const navigation = useNavigation(); // Para redirigir al login
+  const navigation = useNavigation(); 
 
-  // Depurar id_usuario
   useEffect(() => {
     console.log("Valor de id_usuario:", id_usuario);
     const fetchPerfil = async () => {
       if (!id_usuario) {
         setError("No se encontró el ID del usuario. Por favor, inicia sesión.");
         setLoading(false);
-        // Redirigir a la pantalla de login
-        navigation.navigate("login"); // Asegúrate de que "Login" esté definido en tu StackNavigator
+        navigation.navigate("login");
         return;
       }
 
@@ -66,7 +64,6 @@ const Perfil = () => {
     try {
       await axios.put(`https://backendcentro.onrender.com/api/perfilcliente/${id_usuario}`, formData);
       console.log("Datos enviados en PUT:", formData);
-      // Recargar el perfil con un GET
       const response = await axios.get(`https://backendcentro.onrender.com/api/perfilcliente/${id_usuario}`);
       console.log("Respuesta del backend (GET después de PUT):", response.data);
       const updatedPerfil = response.data;

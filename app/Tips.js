@@ -41,9 +41,9 @@ const Tips = () => {
       .catch(() => setLoading(false));
   };
 
-  fetchNotificaciones(); // Llama al cargar
+  fetchNotificaciones();
 
-  const interval = setInterval(fetchNotificaciones, 60000); // Cada minuto
+  const interval = setInterval(fetchNotificaciones, 60000); // Cada minuto PRUEBAS
 
   return () => clearInterval(interval);
 }, []);

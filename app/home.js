@@ -1,14 +1,14 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { useContext, useEffect, useState } from "react";
-import { useNavigation } from "@react-navigation/native"; // Añadido para navegación
-import { AuthContext } from "./AuthContext"; // Asegúrate de que la ruta al AuthContext sea correcta
+import { useNavigation } from "@react-navigation/native"; 
+import { AuthContext } from "./AuthContext"; 
 
 const Home = () => {
   const { id_usuario } = useContext(AuthContext);
-  const navigation = useNavigation(); // Hook para navegación
-  const [userName, setUserName] = useState("Usuario"); // Valor por defecto para el nombre
-  const [routinesProgress, setRoutinesProgress] = useState({ completed: 0, total: 0 }); // Progreso de rutinas
-  const [recommendedRoutines, setRecommendedRoutines] = useState([]); // Rutinas recomendadas
+  const navigation = useNavigation(); 
+  const [userName, setUserName] = useState("Usuario"); 
+  const [routinesProgress, setRoutinesProgress] = useState({ completed: 0, total: 0 });
+  const [recommendedRoutines, setRecommendedRoutines] = useState([]); 
 
   useEffect(() => {
     // Obtener nombre del usuario
@@ -51,8 +51,8 @@ const Home = () => {
               id: routine.id_rutina,
               titulo: routine.titulo,
               descripcion: routine.descripcion,
-              duracion_total: routine.duracion_total || 15, // Valor por defecto si no hay duración
-              dificultad: routine.dificultad || "Fácil", // Valor por defecto si no hay dificultad
+              duracion_total: routine.duracion_total || 15, 
+              dificultad: routine.dificultad || "Fácil",
             }));
 
           setRecommendedRoutines(pendingRoutines);

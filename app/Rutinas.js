@@ -66,7 +66,6 @@ const Rutinas = () => {
     fetchRoutines();
   }, [selectedTab, id_usuario]);
 
-  // Obtiene la imagen del primer paso con imagen disponible
   const getRoutineImage = (routine) => {
     if (Array.isArray(routine.pasos) && routine.pasos.length > 0) {
       // Busca el primer paso con imagen no vacía
@@ -119,14 +118,13 @@ const Rutinas = () => {
 
         {/* Rutinas */}
         {routines.map((routine, index) => {
-          // Si la API ya trae los pasos como array, podemos mostrar el número real de ejercicios
           const numEjercicios = Array.isArray(routine.pasos) ? routine.pasos.length : 0;
           const routineInfo = {
             title: routine.titulo || "Sin título",
             description: routine.descripcion || "Sin descripción",
-            duration: defaultRoutineData[selectedTab].duration, // Puedes ajustar si tienes duración real
+            duration: defaultRoutineData[selectedTab].duration,
             exercises: numEjercicios > 0 ? `${numEjercicios} ejercicios` : defaultRoutineData[selectedTab].exercises,
-            difficulty: defaultRoutineData[selectedTab].difficulty, // Puedes ajustar si tienes dificultad real
+            difficulty: defaultRoutineData[selectedTab].difficulty,
           };
 
           return (

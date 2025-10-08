@@ -3,7 +3,7 @@
 import { useRoute } from "@react-navigation/native"
 import { useContext, useEffect, useState } from "react"
 import { Image, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native"
-import { AuthContext } from "./AuthContext" // Ajusta la ruta según tu estructura
+import { AuthContext } from "./AuthContext" 
 
 const RutinaDetalle = () => {
   const route = useRoute()
