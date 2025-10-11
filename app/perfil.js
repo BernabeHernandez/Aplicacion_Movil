@@ -161,37 +161,6 @@ const Perfil = () => {
             </View>
           </View>
 
-          {/* Recent Achievements */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Logros Recientes</Text>
-            <View style={styles.achievementsGrid}>
-              <View style={styles.achievementItem}>
-                <View style={[styles.achievementIcon, { backgroundColor: "#FFF9C4" }]}>
-                  <Text style={styles.achievementEmoji}>☀️</Text>
-                </View>
-                <Text style={styles.achievementText}>Primera semana</Text>
-              </View>
-              <View style={styles.achievementItem}>
-                <View style={[styles.achievementIcon, { backgroundColor: "#FFE0B2" }]}>
-                  <Text style={styles.achievementEmoji}>🔥</Text>
-                </View>
-                <Text style={styles.achievementText}>7 días consecutivos</Text>
-              </View>
-              <View style={styles.achievementItem}>
-                <View style={[styles.achievementIcon, { backgroundColor: "#FFF9C4" }]}>
-                  <Text style={styles.achievementEmoji}>🏅</Text>
-                </View>
-                <Text style={styles.achievementText}>50 ejercicios</Text>
-              </View>
-              <View style={styles.achievementItem}>
-                <View style={[styles.achievementIcon, { backgroundColor: "#F5F5F5" }]}>
-                  <Text style={styles.achievementEmoji}>👑</Text>
-                </View>
-                <Text style={[styles.achievementText, { color: "#999" }]}>Mes completo</Text>
-              </View>
-            </View>
-          </View>
-
           {/* Menu Options */}
           <View style={styles.menuSection}>
             <TouchableOpacity

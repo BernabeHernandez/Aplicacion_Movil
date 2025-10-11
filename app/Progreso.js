@@ -1,23 +1,168 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native"
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import { useState, useEffect, useContext } from "react";
+import axios from "axios";
+import { AuthContext } from "./AuthContext";
 
 const Progreso = () => {
-  const weekDays = [
-    { day: "Lun", number: 1, completed: true },
-    { day: "Mar", number: 2, completed: true },
-    { day: "Mié", number: 3, completed: true },
-    { day: "Jue", number: 4, completed: true },
-    { day: "Vie", number: 5, completed: true },
-    { day: "Vie", number: 6, completed: true },
-    { day: "Dom", number: 7, completed: false },
-  ]
+  const { id_usuario } = useContext(AuthContext);
+  const [weekDays, setWeekDays] = useState([]);
+  const [streak, setStreak] = useState(0);
+  const [completadas, setCompletadas] = useState({ completadas: 0, total: 0 });
+  const [asignaciones, setAsignaciones] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // URL base de tu backend (reemplaza con la URL real)
+  const API_BASE_URL = "https://backendcentro.onrender.com";
+
+  // Normalizar fechas para comparar solo el día (sin horas)
+  const normalizeDate = (date) => {
+    const normalized = new Date(date);
+    normalized.setHours(0, 0, 0, 0);
+    return normalized;
+  };
+
+  // Calcular días consecutivos completados
+  const calcularRacha = (asignaciones, progresos) => {
+    let streak = 0;
+    const today = normalizeDate(new Date());
+    let currentDate = new Date(today);
+
+    // Encontrar la fecha de inicio más temprana
+    const earliestStart = asignaciones.reduce((minDate, a) => {
+      const inicio = normalizeDate(a.fecha_inicio);
+      return !minDate || inicio < minDate ? inicio : minDate;
+    }, null);
+
+    // No contar días antes de la fecha de inicio más temprana
+    if (!earliestStart || currentDate < earliestStart) return 0;
+
+    while (currentDate >= earliestStart) {
+      const asignacionesDelDia = asignaciones.filter(a => {
+        const inicio = normalizeDate(a.fecha_inicio);
+        const fin = a.fecha_fin ? normalizeDate(a.fecha_fin) : inicio;
+        return currentDate >= inicio && currentDate <= fin;
+      });
+
+      if (asignacionesDelDia.length === 0) break;
+
+      const todasCompletadas = asignacionesDelDia.every(a => {
+        const pasosAsignacion = progresos.filter(p => p.id_asignacion === a.id);
+        return pasosAsignacion.length > 0 && pasosAsignacion.every(p => p.estado === "completado");
+      });
+
+      if (!todasCompletadas) break;
+
+      streak++;
+      currentDate.setDate(currentDate.getDate() - 1);
+    }
+
+    return streak;
+  };
+
+  // Generar los días de la semana según fecha_inicio y fecha_fin
+  const generarDiasSemana = (asignaciones, progresos) => {
+    const dias = [
+      { day: "Lun", number: 1, completed: false },
+      { day: "Mar", number: 2, completed: false },
+      { day: "Mié", number: 3, completed: false },
+      { day: "Jue", number: 4, completed: false },
+      { day: "Vie", number: 5, completed: false },
+      { day: "Sáb", number: 6, completed: false },
+      { day: "Dom", number: 7, completed: false },
+    ];
+
+    const today = normalizeDate(new Date());
+    const inicioSemana = new Date(today);
+    inicioSemana.setDate(today.getDate() - today.getDay() + 1); // Lunes de la semana actual
+
+    // Encontrar la fecha de inicio más temprana
+    const earliestStart = asignaciones.reduce((minDate, a) => {
+      const inicio = normalizeDate(a.fecha_inicio);
+      return !minDate || inicio < minDate ? inicio : minDate;
+    }, today);
+
+    return dias.map((dia, index) => {
+      const diaFecha = new Date(inicioSemana);
+      diaFecha.setDate(inicioSemana.getDate() + index);
+
+      // Solo considerar días a partir de la fecha de inicio más temprana
+      if (diaFecha < earliestStart) {
+        return { ...dia, completed: false, number: diaFecha.getDate() };
+      }
+
+      const asignacionesDelDia = asignaciones.filter(a => {
+        const inicio = normalizeDate(a.fecha_inicio);
+        const fin = a.fecha_fin ? normalizeDate(a.fecha_fin) : inicio;
+        return diaFecha >= inicio && diaFecha <= fin;
+      });
+
+      const completado = asignacionesDelDia.length > 0 && asignacionesDelDia.every(a => {
+        const pasosAsignacion = progresos.filter(p => p.id_asignacion === a.id);
+        return pasosAsignacion.length > 0 && pasosAsignacion.every(p => p.estado === "completado");
+      });
+
+      return { ...dia, completed: completado, number: diaFecha.getDate() };
+    });
+  };
+
+  // Calcular completadas y total de rutinas por día
+  const calcularCompletadas = (asignaciones, progresos, fecha = new Date()) => {
+    const fechaNormalizada = normalizeDate(fecha);
+    const asignacionesDelDia = asignaciones.filter(a => {
+      const inicio = normalizeDate(a.fecha_inicio);
+      const fin = a.fecha_fin ? normalizeDate(a.fecha_fin) : inicio;
+      return fechaNormalizada >= inicio && fechaNormalizada <= fin;
+    });
+
+    const total = asignacionesDelDia.length;
+    const completadas = asignacionesDelDia.filter(a => {
+      const pasosAsignacion = progresos.filter(p => p.id_asignacion === a.id);
+      return pasosAsignacion.length > 0 && pasosAsignacion.every(p => p.estado === "completado");
+    }).length;
+
+    return { completadas, total };
+  };
+
+  useEffect(() => {
+    if (!id_usuario) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        // Obtener asignaciones del usuario
+        const asignacionesRes = await axios.get(`${API_BASE_URL}/api/asignaciones_rutinas/usuario/${id_usuario}`);
+        const asignacionesData = asignacionesRes.data;
+
+        // Obtener progresos para todas las asignaciones
+        const progresosPromises = asignacionesData.map(a =>
+          axios.get(`${API_BASE_URL}/api/progresos/asignacion/${a.id}`)
+        );
+        const progresosResponses = await Promise.all(progresosPromises);
+        const progresosData = progresosResponses.flatMap(res => res.data);
+
+        setAsignaciones(asignacionesData);
+        setWeekDays(generarDiasSemana(asignacionesData, progresosData));
+        setStreak(calcularRacha(asignacionesData, progresosData));
+        setCompletadas(calcularCompletadas(asignacionesData, progresosData));
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id_usuario]);
 
   const achievements = [
     {
-      title: "7 días consecutivos",
-      date: "17/8/2024",
+      title: `${streak} días consecutivos`,
+      date: streak > 0 ? new Date().toLocaleDateString("es-MX") : "",
       icon: "🔥",
-      completed: true,
-      bgColor: "#FFF3E0",
+      completed: streak > 0,
+      bgColor: streak > 0 ? "#FFF3E0" : "#F5F5F5",
     },
     {
       title: "50 ejercicios completados",
@@ -40,7 +185,15 @@ const Progreso = () => {
       completed: false,
       bgColor: "#F5F5F5",
     },
-  ]
+  ];
+
+  if (loading) {
+    return <Text>Cargando...</Text>;
+  }
+
+  if (!id_usuario) {
+    return <Text>Por favor, inicia sesión para ver tu progreso.</Text>;
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -67,7 +220,7 @@ const Progreso = () => {
           <View style={styles.medalIcon}>
             <Text style={styles.medalEmoji}>🏆</Text>
           </View>
-          <Text style={styles.streakNumber}>7 días</Text>
+          <Text style={styles.streakNumber}>{streak} días</Text>
           <Text style={styles.streakLabel}>Racha actual</Text>
           <Text style={styles.streakMessage}>¡Excelente trabajo! Mantén el ritmo</Text>
         </View>
@@ -94,9 +247,14 @@ const Progreso = () => {
               <Text style={styles.statIcon}>🎯</Text>
               <Text style={styles.statLabel}>Completadas</Text>
             </View>
-            <Text style={styles.statValue}>42/45</Text>
+            <Text style={styles.statValue}>{completadas.completadas}/{completadas.total}</Text>
             <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: "93%" }]} />
+              <View
+                style={[
+                  styles.progressFill,
+                  { width: completadas.total > 0 ? `${(completadas.completadas / completadas.total) * 100}%` : "0%" },
+                ]}
+              />
             </View>
           </View>
 
@@ -158,8 +316,8 @@ const Progreso = () => {
         </View>
       </View>
     </ScrollView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -402,6 +560,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
   },
-})
+});
 
-export default Progreso
+export default Progreso;

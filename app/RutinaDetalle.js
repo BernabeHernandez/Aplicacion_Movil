@@ -21,6 +21,7 @@ const RutinaDetalle = () => {
   const [progresos, setProgresos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [currentSesion, setCurrentSesion] = useState(1) 
 
   const BASE_URL = "https://backendcentro.onrender.com"
 
@@ -66,7 +67,7 @@ const RutinaDetalle = () => {
     const checkExistingAsignacion = async () => {
       try {
         console.log('Buscando asignación existente para id_usuario:', id_usuario, 'id_rutina:', id_rutina)
-        const response = await fetch(`${BASE_URL}/api/asignaciones_rutinas`, {
+        const response = await fetch(`${BASE_URL}/api/asignaciones_rutinas/usuario/${id_usuario}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -77,10 +78,15 @@ const RutinaDetalle = () => {
           throw new Error(`Error al buscar asignaciones: ${response.status} ${errorText}`)
         }
         const asignaciones = await response.json()
-        console.log('Asignaciones encontradas:', asignaciones)
-        const asignacionExistente = asignaciones.find(
-          a => a.id_usuario === id_usuario && a.id_rutina === id_rutina && a.estado === 'en_progreso'
-        )
+        console.log('Asignaciones encontradas para el usuario:', asignaciones)
+        
+        // Busca asignaciones activas (pendiente o en_progreso) para esta rutina
+        const asignacionesActivas = asignaciones
+          .filter(a => a.id_rutina === id_rutina && ['pendiente', 'en_progreso'].includes(a.estado))
+          .sort((a, b) => b.id - a.id) // Ordena por ID descendente (más reciente primero)
+        
+        const asignacionExistente = asignacionesActivas[0]
+        
         if (asignacionExistente) {
           console.log('Asignación existente encontrada:', asignacionExistente)
           setAsignacionId(asignacionExistente.id)
@@ -89,8 +95,8 @@ const RutinaDetalle = () => {
         }
       } catch (err) {
         console.error('Error checking asignacion:', err.message)
-        setError('Error al verificar asignación existente')
-        createAsignacion()
+        setError('Error al verificar asignación existente. Por favor, intenta de nuevo.')
+        setLoading(false)
       }
     }
 
@@ -109,6 +115,7 @@ const RutinaDetalle = () => {
             fecha_inicio: new Date().toISOString().split('T')[0],
             progreso_actual: 0,
             duracion_total: 0,
+            sesion: 1, // Enviado para inicializar progresos, pero no se guarda en asignaciones_rutinas
           }),
         })
         if (!response.ok) {
@@ -121,6 +128,7 @@ const RutinaDetalle = () => {
       } catch (err) {
         console.error('Error creating asignacion:', err.message)
         setError('Error al iniciar la asignación de la rutina')
+        setLoading(false)
       }
     }
 
@@ -167,7 +175,7 @@ const RutinaDetalle = () => {
   // Cargar progresos
   useEffect(() => {
     const fetchProgresos = async () => {
-      if (!asignacionId || !rutina) return; // Esperar a que rutina esté cargada
+      if (!asignacionId || !rutina) return // Esperar a que rutina esté cargada
       try {
         console.log('Ejecutando fetchProgresos con asignacionId:', asignacionId)
         await new Promise(resolve => setTimeout(resolve, 500))
@@ -186,6 +194,9 @@ const RutinaDetalle = () => {
         console.log('Progresos cargados:', data)
         if (data && Array.isArray(data) && data.length > 0) {
           setProgresos(data)
+          // Establecer la sesión actual desde los progresos
+          const sesionActual = data[0]?.sesion || 1
+          setCurrentSesion(sesionActual)
           const nextStepIndex = data.findIndex(p => p.estado !== 'completado')
           const newIndex = nextStepIndex >= 0 ? nextStepIndex : data.length - 1
           console.log('Calculando currentExercise:', { nextStepIndex, newIndex, totalExercises: exercises.length })
@@ -385,36 +396,73 @@ const RutinaDetalle = () => {
   }
 
   const handleRepeat = async () => {
+    if (!asignacionId || progresos.length === 0) {
+      setError('No se puede repetir la rutina. Asegúrate de que la asignación y los progresos estén cargados.')
+      console.error('Error en handleRepeat:', { asignacionId, progresos })
+      return
+    }
     try {
-      const response = await fetch(`${BASE_URL}/api/asignaciones_rutinas`, {
-        method: 'POST',
+      console.log('Repitiendo rutina para asignacionId:', asignacionId)
+      // 1. Obtener los progresos para determinar la sesión actual
+      const progresosResponse = await fetch(`${BASE_URL}/api/progresos/asignacion/${asignacionId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      if (!progresosResponse.ok) {
+        const errorText = await progresosResponse.text()
+        throw new Error(`Error al obtener progresos: ${progresosResponse.status} ${errorText}`)
+      }
+      const progresosData = await progresosResponse.json()
+      if (!progresosData || progresosData.length === 0) {
+        throw new Error('No se encontraron progresos para esta asignación')
+      }
+      // Tomar la sesión actual del primer progreso (todos tienen el mismo valor de sesion)
+      const currentSesionValue = progresosData[0]?.sesion || 1
+      const nuevaSesion = currentSesionValue + 1
+
+      // 2. Reiniciar la asignación y sus progresos
+      const resetResponse = await fetch(`${BASE_URL}/api/asignaciones_rutinas/${asignacionId}/reset`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id_usuario,
-          id_rutina,
-          estado: 'pendiente',
-          fecha_inicio: new Date().toISOString().split('T')[0],
-          progreso_actual: 0,
-          duracion_total: 0,
+          sesion: nuevaSesion,
         }),
       })
-      if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(`Error al crear nueva asignación: ${response.status} ${errorText}`)
+      if (!resetResponse.ok) {
+        const errorText = await resetResponse.text()
+        throw new Error(`Error al reiniciar asignación: ${resetResponse.status} ${errorText}`)
       }
-      const data = await response.json()
-      console.log('Nueva asignación creada para repetir:', data)
-      setAsignacionId(data.id)
+      const asignacionActualizada = await resetResponse.json()
+      console.log('Asignación reiniciada:', { id: asignacionId, sesion: nuevaSesion })
+
+      // 3. Actualizar estado local
       setProgresos([])
       setCurrentExercise(0)
       setIsRunning(false)
       setIsPaused(false)
       setTimeRemaining(exercises[0]?.duration || 0)
+      setCurrentSesion(nuevaSesion)
+
+      // 4. Recargar progresos para reflejar el reinicio
+      const nuevosProgresosResponse = await fetch(`${BASE_URL}/api/progresos/asignacion/${asignacionId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      if (!nuevosProgresosResponse.ok) {
+        const errorText = await nuevosProgresosResponse.text()
+        throw new Error(`Error al recargar progresos: ${nuevosProgresosResponse.status} ${errorText}`)
+      }
+      const nuevosProgresos = await nuevosProgresosResponse.json()
+      setProgresos(nuevosProgresos)
     } catch (err) {
       console.error('Error repeating routine:', err.message)
-      setError('Error al repetir la rutina')
+      setError('Error al repetir la rutina. Por favor, intenta de nuevo.')
     }
   }
 
@@ -448,7 +496,7 @@ const RutinaDetalle = () => {
         <View style={styles.titleContainer}>
           <Text style={styles.routineTitle}>{rutina.titulo || "Sin título"}</Text>
           <Text style={styles.exerciseCounter}>
-            Ejercicio {currentExercise + 1} de {totalExercises}
+            Ejercicio {currentExercise + 1} de {totalExercises} | Sesión {currentSesion}
           </Text>
         </View>
         <Text style={styles.difficulty}>Fácil</Text>
