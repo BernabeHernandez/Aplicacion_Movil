@@ -1,7 +1,8 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { useContext, useEffect, useState } from "react";
-import { useNavigation } from "@react-navigation/native"; 
+import { useNavigation, useFocusEffect } from "@react-navigation/native"; 
 import { AuthContext } from "./AuthContext"; 
+import React from "react";
 
 const Home = () => {
   const { id_usuario } = useContext(AuthContext);
@@ -10,65 +11,73 @@ const Home = () => {
   const [routinesProgress, setRoutinesProgress] = useState({ completed: 0, total: 0 });
   const [recommendedRoutines, setRecommendedRoutines] = useState([]); 
 
-  useEffect(() => {
-    // Obtener nombre del usuario
-    const fetchUserProfile = async () => {
-      try {
-        const response = await fetch(`https://backendcentro.onrender.com/api/perfilcliente/${id_usuario}`);
-        const data = await response.json();
-        if (response.ok && data.nombre) {
-          setUserName(data.nombre);
-        } else {
-          console.error("Error al obtener el perfil:", data.error || "Sin datos");
-        }
-      } catch (error) {
-        console.error("Error en la llamada a la API de perfil:", error);
+  const fetchUserProfile = async () => {
+    try {
+      const response = await fetch(`https://backendcentro.onrender.com/api/perfilcliente/${id_usuario}`);
+      const data = await response.json();
+      if (response.ok && data.nombre) {
+        setUserName(data.nombre);
+      } else {
+        console.error("Error al obtener el perfil:", data.error || "Sin datos");
       }
-    };
-
-    // Obtener rutinas asignadas del usuario
-    const fetchRoutines = async () => {
-      try {
-        const response = await fetch(`https://backendcentro.onrender.com/api/rutinas/usuario/${id_usuario}`);
-        const data = await response.json();
-        if (response.ok) {
-          // Filtrar rutinas de hoy (basado en fecha_inicio)
-          const today = new Date().toISOString().split("T")[0]; // Fecha actual en formato YYYY-MM-DD
-          const todayRoutines = data.filter((routine) => {
-            const routineDate = routine.fecha_inicio ? new Date(routine.fecha_inicio).toISOString().split("T")[0] : null;
-            return routineDate === today;
-          });
-
-          // Contar rutinas completadas y totales
-          const completed = todayRoutines.filter((routine) => routine.estado === "completada").length;
-          const total = todayRoutines.length;
-          setRoutinesProgress({ completed, total });
-
-          // Filtrar rutinas pendientes para "Rutinas Recomendadas"
-          const pendingRoutines = todayRoutines
-            .filter((routine) => routine.estado === "pendiente")
-            .map((routine) => ({
-              id: routine.id_rutina,
-              titulo: routine.titulo,
-              descripcion: routine.descripcion,
-              duracion_total: routine.duracion_total || 15, 
-              dificultad: routine.dificultad || "Fácil",
-            }));
-
-          setRecommendedRoutines(pendingRoutines);
-        } else {
-          console.error("Error al obtener rutinas:", data.error || "Sin datos");
-        }
-      } catch (error) {
-        console.error("Error en la llamada a la API de rutinas:", error);
-      }
-    };
-
-    if (id_usuario) {
-      fetchUserProfile();
-      fetchRoutines();
+    } catch (error) {
+      console.error("Error en la llamada a la API de perfil:", error);
     }
-  }, [id_usuario]);
+  };
+
+  const fetchRoutines = async () => {
+    try {
+      const response = await fetch(`https://backendcentro.onrender.com/api/rutinas/usuario/${id_usuario}`);
+      const data = await response.json();
+      if (response.ok) {
+        // Filtrar rutinas activas basadas en el rango de fechas (fecha_inicio a fecha_fin)
+        const today = new Date().toISOString().split("T")[0]; // Fecha actual en formato YYYY-MM-DD
+        const todayRoutines = data.filter((routine) => {
+          const startDate = routine.fecha_inicio ? routine.fecha_inicio.split("T")[0] : null;
+          const endDate = routine.fecha_fin ? routine.fecha_fin.split("T")[0] : null;
+          return startDate && endDate && today >= startDate && today <= endDate;
+        });
+
+        // Contar rutinas completadas y totales
+        const completed = todayRoutines.filter((routine) => routine.estado === "completada").length;
+        const total = todayRoutines.length;
+        setRoutinesProgress({ completed, total });
+
+        // Mapear todas las rutinas activas para "Rutinas Recomendadas"
+        const allRoutines = todayRoutines.map((routine) => {
+          // Calcular duración total basada en pasos si existen
+          let duracion_total = 15; // Valor por defecto
+          if (routine.pasos && routine.pasos.length > 0) {
+            duracion_total = routine.pasos.reduce((sum, paso) => sum + (paso.tiempo_estimado * paso.repeticiones), 0);
+          }
+
+          return {
+            id: routine.id_rutina,
+            titulo: routine.titulo,
+            descripcion: routine.descripcion,
+            duracion_total: duracion_total,
+            dificultad: routine.dificultad || "Fácil",
+            estado: routine.estado, // Incluir estado para diferenciar completadas
+          };
+        });
+
+        setRecommendedRoutines(allRoutines);
+      } else {
+        console.error("Error al obtener rutinas:", data.error || "Sin datos");
+      }
+    } catch (error) {
+      console.error("Error en la llamada a la API de rutinas:", error);
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (id_usuario) {
+        fetchUserProfile();
+        fetchRoutines();
+      }
+    }, [id_usuario])
+  );
 
   // Calcular porcentaje de progreso
   const progressPercentage = routinesProgress.total > 0 ? Math.round((routinesProgress.completed / routinesProgress.total) * 100) : 0;
@@ -109,18 +118,6 @@ const Home = () => {
               </Text>
             </View>
           </View>
-
-          <View style={styles.statItem}>
-            <View style={styles.statIconContainer}>
-              <View style={styles.fireIcon}>
-                <Text style={styles.fireIconText}>🔥</Text>
-              </View>
-            </View>
-            <View>
-              <Text style={styles.statLabel}>Racha</Text>
-              <Text style={styles.statValue}>7 días</Text>
-            </View>
-          </View>
         </View>
 
         {/* Progress Section */}
@@ -158,12 +155,16 @@ const Home = () => {
                     </View>
                   </View>
                 </View>
-                <TouchableOpacity
-                  style={styles.startButton}
-                  onPress={() => navigation.navigate('RutinaDetalle', { id_rutina: routine.id })}
-                >
-                  <Text style={styles.startButtonText}>▶ Iniciar</Text>
-                </TouchableOpacity>
+                {routine.estado === "completada" ? (
+                  <Text style={styles.completedText}>Completada</Text>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.startButton}
+                    onPress={() => navigation.navigate('RutinaDetalle', { id_rutina: routine.id })}
+                  >
+                    <Text style={styles.startButtonText}>▶ Iniciar</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             ))
           ) : (
@@ -379,6 +380,13 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 14,
     fontWeight: "600",
+  },
+  completedText: {
+    color: "#689F38",
+    fontSize: 14,
+    fontWeight: "600",
+    paddingHorizontal: 15,
+    paddingVertical: 8,
   },
   motivationalContainer: {
     flexDirection: "row",

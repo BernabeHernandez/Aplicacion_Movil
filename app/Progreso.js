@@ -11,29 +11,24 @@ const Progreso = () => {
   const [asignaciones, setAsignaciones] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // URL base de tu backend (reemplaza con la URL real)
   const API_BASE_URL = "https://backendcentro.onrender.com";
 
-  // Normalizar fechas para comparar solo el día (sin horas)
   const normalizeDate = (date) => {
     const normalized = new Date(date);
     normalized.setHours(0, 0, 0, 0);
     return normalized;
   };
 
-  // Calcular días consecutivos completados
   const calcularRacha = (asignaciones, progresos) => {
     let streak = 0;
     const today = normalizeDate(new Date());
     let currentDate = new Date(today);
 
-    // Encontrar la fecha de inicio más temprana
     const earliestStart = asignaciones.reduce((minDate, a) => {
       const inicio = normalizeDate(a.fecha_inicio);
       return !minDate || inicio < minDate ? inicio : minDate;
     }, null);
 
-    // No contar días antes de la fecha de inicio más temprana
     if (!earliestStart || currentDate < earliestStart) return 0;
 
     while (currentDate >= earliestStart) {
@@ -73,8 +68,7 @@ const Progreso = () => {
 
     const today = normalizeDate(new Date());
     const inicioSemana = new Date(today);
-    inicioSemana.setDate(today.getDate() - today.getDay() + 1); // Lunes de la semana actual
-
+    inicioSemana.setDate(today.getDate() - today.getDay() + 1); 
     // Encontrar la fecha de inicio más temprana
     const earliestStart = asignaciones.reduce((minDate, a) => {
       const inicio = normalizeDate(a.fecha_inicio);
@@ -267,35 +261,6 @@ const Progreso = () => {
           </View>
         </View>
 
-        {/* Achievements */}
-        <View style={styles.achievementsSection}>
-          <Text style={styles.sectionTitle}>Logros</Text>
-          <View style={styles.achievementsGrid}>
-            {achievements.map((achievement, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.achievementCard,
-                  { backgroundColor: achievement.bgColor },
-                  !achievement.completed && styles.achievementLocked,
-                ]}
-              >
-                <Text style={[styles.achievementIcon, !achievement.completed && styles.achievementIconLocked]}>
-                  {achievement.icon}
-                </Text>
-                <Text style={[styles.achievementTitle, !achievement.completed && styles.achievementTextLocked]}>
-                  {achievement.title}
-                </Text>
-                {achievement.date && (
-                  <Text style={[styles.achievementDate, !achievement.completed && styles.achievementTextLocked]}>
-                    {achievement.date}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
         {/* Monthly Summary */}
         <View style={styles.monthlySummary}>
           <Text style={styles.monthlyTitle}>Resumen del Mes</Text>
@@ -306,10 +271,10 @@ const Progreso = () => {
             </View>
             <View style={styles.monthlyStatItem}>
               <Text style={styles.monthlyStatValue}>126</Text>
-              <Text style={styles.monthlyStatLabel}>Mejor racha</Text>
+              <Text style={styles.monthlyStatLabel}>Tiempo en Min</Text>
             </View>
             <View style={styles.monthlyStatItem}>
-              <Text style={styles.monthlyStatValue}>156</Text>
+              <Text style={styles.monthlyStatValue}>15</Text>
               <Text style={styles.monthlyStatLabel}>Ejercicios</Text>
             </View>
           </View>

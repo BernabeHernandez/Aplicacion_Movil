@@ -16,16 +16,6 @@ const Notificaciones = () => {
       icon: "⏰",
     },
     {
-      id: 2,
-      type: "logro",
-      title: "¡Nuevo logro desbloqueado!",
-      message: "Has completado 7 días consecutivos de ejercicios",
-      time: "09:15",
-      date: "Hoy",
-      read: false,
-      icon: "🏆",
-    },
-    {
       id: 3,
       type: "tip",
       title: "Tip del día",
