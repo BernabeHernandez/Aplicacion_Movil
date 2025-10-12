@@ -3,117 +3,139 @@ import { Tabs } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { TextInput, View, Image, StyleSheet, Dimensions } from "react-native";
 import AuthProvider from "./AuthContext";
+import { useContext } from "react";
+import { AuthContext } from "./AuthContext";
 
 const { width: screenWidth } = Dimensions.get("window");
 const searchWidth = Math.min(Math.max(screenWidth * 0.6, 200), 300);
 
+function TabsLayout() {
+  const { id_usuario } = useContext(AuthContext);
+
+  return (
+    <Tabs
+      screenOptions={{
+        headerTitle: () => (
+          <View style={[styles.searchWrapper, { width: searchWidth }]}>
+            <MaterialIcons
+              name="search"
+              size={20}
+              color="#999"
+              style={styles.searchIcon}
+            />
+            <TextInput
+              placeholder="Buscar rutinas, ejercicios..."
+              placeholderTextColor="#999"
+              style={styles.searchBar}
+            />
+          </View>
+        ),
+        headerTitleAlign: "center",
+        headerTitleContainerStyle: {
+          flex: 1,
+          alignItems: "center",
+        },
+        headerRight: () => (
+          <View style={styles.logoContainer}>
+            <Image
+              source={require("../assets/images/logo.png")}
+              style={styles.logo}
+            />
+          </View>
+        ),
+        tabBarStyle: styles.tabBar,
+        tabBarActiveTintColor: "#1976D2",
+        tabBarInactiveTintColor: "#666",
+      }}
+    >
+      {/* Pantalla de Login - Solo visible si NO está autenticado */}
+      <Tabs.Screen
+        name="login"
+        options={{
+          title: "Iniciar Sesión",
+          tabBarIcon: ({ size, color }) => (
+            <MaterialIcons name="login" size={size} color={color} />
+          ),
+          // Ocultar del tab bar si está autenticado
+          href: id_usuario ? null : "/login",
+        }}
+      />
+
+      {/* Pantallas principales - Solo visibles si está autenticado */}
+      <Tabs.Screen
+        name="home"
+        options={{
+          title: "Inicio",
+          tabBarIcon: ({ size, color }) => (
+            <MaterialIcons name="home" size={size} color={color} />
+          ),
+          href: id_usuario ? "/home" : null,
+        }}
+      />
+      <Tabs.Screen
+        name="Rutinas"
+        options={{
+          title: "Rutinas",
+          tabBarIcon: ({ size, color }) => (
+            <MaterialIcons name="fitness-center" size={size} color={color} />
+          ),
+          href: id_usuario ? "/Rutinas" : null,
+        }}
+      />
+      <Tabs.Screen
+        name="Progreso"
+        options={{
+          title: "Progreso",
+          tabBarIcon: ({ size, color }) => (
+            <MaterialIcons name="trending-up" size={size} color={color} />
+          ),
+          href: id_usuario ? "/Progreso" : null,
+        }}
+      />
+      <Tabs.Screen
+        name="Notificaciones"
+        options={{
+          title: "Notificaciones",
+          tabBarIcon: ({ size, color }) => (
+            <MaterialIcons name="notifications" size={size} color={color} />
+          ),
+          href: id_usuario ? "/Notificaciones" : null,
+        }}
+      />
+      <Tabs.Screen
+        name="Tips"
+        options={{
+          title: "Tips",
+          tabBarIcon: ({ size, color }) => (
+            <MaterialIcons name="lightbulb" size={size} color={color} />
+          ),
+          href: id_usuario ? "/Tips" : null,
+        }}
+      />
+      <Tabs.Screen
+        name="perfil"
+        options={{
+          title: "Perfil",
+          tabBarIcon: ({ size, color }) => (
+            <MaterialIcons name="person" size={size} color={color} />
+          ),
+          href: id_usuario ? "/perfil" : null,
+        }}
+      />
+
+      {/* Pantallas ocultas del tab bar */}
+      <Tabs.Screen name="index" options={{ href: null }} />
+      <Tabs.Screen name="RutinaDetalle" options={{ href: null }} />
+      <Tabs.Screen name="+not-found" options={{ href: null }} />
+      <Tabs.Screen name="AuthContext" options={{ href: null }} />
+    </Tabs>
+  );
+}
+
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <Tabs
-        screenOptions={{
-          headerTitle: () => (
-            <View style={[styles.searchWrapper, { width: searchWidth }]}>
-              <MaterialIcons
-                name="search"
-                size={20}
-                color="#999"
-                style={styles.searchIcon}
-              />
-              <TextInput
-                placeholder="Buscar rutinas, ejercicios..."
-                placeholderTextColor="#999"
-                style={styles.searchBar}
-              />
-            </View>
-          ),
-          headerTitleAlign: "center",
-          headerTitleContainerStyle: {
-            flex: 1,
-            alignItems: "center",
-          },
-          headerRight: () => (
-            <View style={styles.logoContainer}>
-              <Image
-                source={require("../assets/images/logo.png")}
-                style={styles.logo}
-              />
-            </View>
-          ),
-          tabBarStyle: styles.tabBar,
-          tabBarActiveTintColor: "#1976D2",
-          tabBarInactiveTintColor: "#666",
-        }}
-      >
-        <Tabs.Screen
-          name="home"
-          options={{
-            title: "Inicio",
-            tabBarIcon: ({ size, color }) => (
-              <MaterialIcons name="home" size={size} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="Rutinas"
-          options={{
-            title: "Rutinas",
-            tabBarIcon: ({ size, color }) => (
-              <MaterialIcons name="fitness-center" size={size} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="Progreso"
-          options={{
-            title: "Progreso",
-            tabBarIcon: ({ size, color }) => (
-              <MaterialIcons name="trending-up" size={size} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="Notificaciones"
-          options={{
-            title: "Notificaciones",
-            tabBarIcon: ({ size, color }) => (
-              <MaterialIcons name="notifications" size={size} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="Tips"
-          options={{
-            title: "Tips",
-            tabBarIcon: ({ size, color }) => (
-              <MaterialIcons name="lightbulb" size={size} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="perfil"
-          options={{
-            title: "Perfil",
-            tabBarIcon: ({ size, color }) => (
-              <MaterialIcons name="person" size={size} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="login"
-          options={{
-            title: "Iniciar Sesión",
-            tabBarIcon: ({ size, color }) => (
-              <MaterialIcons name="login" size={size} color={color} />
-            ),
-          }}
-        />
-
-        {/* Pantallas ocultas */}
-        <Tabs.Screen name="RutinaDetalle" options={{ href: null }} />
-        <Tabs.Screen name="+not-found" options={{ href: null }} />
-        <Tabs.Screen name="AuthContext" options={{ href: null }} />
-      </Tabs>
+      <TabsLayout />
     </AuthProvider>
   );
 }

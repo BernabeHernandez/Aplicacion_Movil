@@ -21,6 +21,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [expoPushToken, setExpoPushToken] = useState("");
   const router = useRouter();
+  
   useEffect(() => {
     const registerForPushNotificationsAsync = async () => {
       let token;
@@ -50,7 +51,6 @@ export default function Login() {
 
     setLoading(true);
 
-
     try {
       const res = await fetch("https://backendcentro.onrender.com/api/login", {
         method: "POST",
@@ -58,7 +58,6 @@ export default function Login() {
         body: JSON.stringify({ user, password, expo_push_token: expoPushToken }),
       });
 
-      // Manejo seguro de la respuesta para evitar error de JSON Parse
       const text = await res.text();
       let data = {};
       try {
@@ -107,10 +106,8 @@ export default function Login() {
         user: data.user,
       });
 
-      // Espera un tick para asegurar que el contexto se actualice antes de navegar
-      setTimeout(() => {
-        router.replace("/Rutinas");
-      }, 50);
+      // Redirigir a Rutinas después del login exitoso
+      router.replace("/Rutinas");
     } catch (err) {
       setLoading(false);
       console.error("Error en login:", err);
@@ -123,7 +120,7 @@ export default function Login() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <View style={styles.card}>
+      <View style={styles.content}>
         <Text style={styles.title}>Bienvenido</Text>
         <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
 
@@ -184,8 +181,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f9f9f9",
+    justifyContent: "center",
+  },
+  content: {
     paddingHorizontal: 30,
-    paddingTop: 180,
   },
   title: {
     fontSize: 32,
@@ -239,6 +238,9 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  linksContainer: {
+    alignItems: "center",
   },
   link: {
     color: "#007AFF",
