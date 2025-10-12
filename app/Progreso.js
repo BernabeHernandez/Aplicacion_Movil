@@ -1,5 +1,6 @@
-import { View, Text, StyleSheet, ScrollView } from "react-native";
-import { useState, useEffect, useContext } from "react";
+import { View, Text, StyleSheet, ScrollView, Animated, Easing } from "react-native";
+import { useState, useEffect, useContext, useCallback, useRef } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import axios from "axios";
 import { AuthContext } from "./AuthContext";
 
@@ -11,6 +12,7 @@ const Progreso = () => {
   const [asignaciones, setAsignaciones] = useState([]);
   const [fechasCompletadas, setFechasCompletadas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [lastFetchTime, setLastFetchTime] = useState(0); // Para controlar refresco
 
   const API_BASE_URL = "https://backendcentro.onrender.com";
 
@@ -36,7 +38,6 @@ const Progreso = () => {
     const inicioSemana = new Date(today);
     inicioSemana.setDate(today.getDate() - today.getDay() + 1);
 
-    // Normalizar fechas completadas para comparación
     const fechasNormalizadas = fechasCompletadas.map((fecha) =>
       normalizeDate(fecha).toISOString().split("T")[0]
     );
@@ -68,53 +69,134 @@ const Progreso = () => {
     return { completadas, total };
   };
 
+  // Animaciones para los tres puntos
+  const bounceValue1 = useRef(new Animated.Value(0)).current;
+  const bounceValue2 = useRef(new Animated.Value(0)).current;
+  const bounceValue3 = useRef(new Animated.Value(0)).current;
+
   useEffect(() => {
+    const startAnimation = (value, delay) => {
+      return Animated.loop(
+        Animated.sequence([
+          Animated.timing(value, {
+            toValue: 1,
+            duration: 600,
+            easing: Easing.ease,
+            useNativeDriver: true,
+            delay: delay,
+          }),
+          Animated.timing(value, {
+            toValue: 0,
+            duration: 600,
+            easing: Easing.ease,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+    };
+
+    const anim1 = startAnimation(bounceValue1, 0);
+    const anim2 = startAnimation(bounceValue2, 200);
+    const anim3 = startAnimation(bounceValue3, 400);
+
+    anim1.start();
+    anim2.start();
+    anim3.start();
+
+    return () => {
+      anim1.stop();
+      anim2.stop();
+      anim3.stop();
+    };
+  }, [bounceValue1, bounceValue2, bounceValue3]);
+
+  const translateY1 = bounceValue1.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -15],
+  });
+  const translateY2 = bounceValue2.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -15],
+  });
+  const translateY3 = bounceValue3.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -15],
+  });
+
+  // Memoizar la función fetch para performance
+  const fetchData = useCallback(async () => {
     if (!id_usuario) {
       setLoading(false);
       return;
     }
 
-    const fetchData = async () => {
-      try {
-        // Obtener asignaciones del usuario
-        const asignacionesRes = await axios.get(`${API_BASE_URL}/api/asignaciones_rutinas/usuario/${id_usuario}`);
-        const asignacionesData = asignacionesRes.data;
+    const now = Date.now();
+    const timeSinceLastFetch = now - lastFetchTime;
+    const MIN_FETCH_INTERVAL = 30000; // 30 segundos como mínimo entre refetchs
 
-        // Obtener progresos para todas las asignaciones
-        const progresosPromises = asignacionesData.map((a) =>
-          axios.get(`${API_BASE_URL}/api/progresos/asignacion/${a.id}`)
-        );
-        const progresosResponses = await Promise.all(progresosPromises);
-        const progresosData = progresosResponses.flatMap((res) => res.data);
+    // Si ya cargó recientemente, usa datos cached
+    if (timeSinceLastFetch < MIN_FETCH_INTERVAL && asignaciones.length > 0) {
+      setLoading(false);
+      return;
+    }
 
-        // Obtener fechas de completaciones diarias
-        const fechasCompletadasRes = await axios.get(`${API_BASE_URL}/api/completaciones_diarias/usuario/${id_usuario}/fechas`);
-        const fechasCompletadasData = fechasCompletadasRes.data;
+    setLoading(true);
+    try {
+      const asignacionesRes = await axios.get(`${API_BASE_URL}/api/asignaciones_rutinas/usuario/${id_usuario}`);
+      const asignacionesData = asignacionesRes.data;
 
-        console.log("Fechas completadas recibidas:", fechasCompletadasData); // Para depuración
+      const progresosPromises = asignacionesData.map((a) =>
+        axios.get(`${API_BASE_URL}/api/progresos/asignacion/${a.id}`)
+      );
+      const progresosResponses = await Promise.all(progresosPromises);
+      const progresosData = progresosResponses.flatMap((res) => res.data);
 
-        setAsignaciones(asignacionesData);
-        setFechasCompletadas(fechasCompletadasData);
-        setTotalDiasCompletados(fechasCompletadasData.length);
-        setWeekDays(generarDiasSemana(fechasCompletadasData));
-        setCompletadas(calcularCompletadas(asignacionesData, progresosData));
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setLoading(false);
-      }
-    };
+      const fechasCompletadasRes = await axios.get(`${API_BASE_URL}/api/completaciones_diarias/usuario/${id_usuario}/fechas`);
+      const fechasCompletadasData = fechasCompletadasRes.data;
 
-    fetchData();
-  }, [id_usuario]);
+      console.log("Fechas completadas recibidas:", fechasCompletadasData);
+
+      setAsignaciones(asignacionesData);
+      setFechasCompletadas(fechasCompletadasData);
+      setTotalDiasCompletados(fechasCompletadasData.length);
+      setWeekDays(generarDiasSemana(fechasCompletadasData));
+      setCompletadas(calcularCompletadas(asignacionesData, progresosData));
+      setLastFetchTime(now);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      // Si falla, sigue usando datos cached
+      setLoading(false);
+    }
+  }, [id_usuario, asignaciones.length, lastFetchTime]);
+
+  // Ejecutar fetch cada vez que la pantalla gana foco
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData])
+  );
+
+  // Opcional: useEffect inicial si necesitas algo al montar
+  useEffect(() => {}, []);
 
   if (loading) {
-    return <Text>Cargando...</Text>;
+    return (
+      <View style={styles.loadingContainer}>
+        <View style={styles.spinner}>
+          <Animated.View style={[styles.dot, { transform: [{ translateY: translateY1 }] }]} />
+          <Animated.View style={[styles.dot, { transform: [{ translateY: translateY2 }] }]} />
+          <Animated.View style={[styles.dot, { transform: [{ translateY: translateY3 }] }]} />
+        </View>
+      </View>
+    );
   }
 
   if (!id_usuario) {
     return <Text>Por favor, inicia sesión para ver tu progreso.</Text>;
   }
+
+  // Calcular el total de asignaciones (todas las rutinas asignadas al usuario)
+  const totalAsignaciones = asignaciones.length;
 
   return (
     <ScrollView style={styles.container}>
@@ -184,7 +266,7 @@ const Progreso = () => {
               <Text style={styles.statIcon}>📊</Text>
               <Text style={styles.statLabel}>Promedio diario</Text>
             </View>
-            <Text style={styles.statValue}>2.1 rutinas</Text>
+            <Text style={styles.statValue}>{totalAsignaciones} rutinas</Text>
           </View>
         </View>
 
@@ -400,6 +482,23 @@ const styles = StyleSheet.create({
   monthlyStatLabel: {
     fontSize: 14,
     color: "#666",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F8F9FA",
+  },
+  spinner: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  dot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#2196F3",
+    marginHorizontal: 4,
   },
 });
 
