@@ -15,37 +15,6 @@ const Notificaciones = () => {
       read: false,
       icon: "⏰",
     },
-    {
-      id: 3,
-      type: "tip",
-      title: "Tip del día",
-      message: "Recuerda mantener una buena postura durante todo el día",
-      time: "08:00",
-      date: "Hoy",
-      read: true,
-      icon: "💡",
-    },
-    {
-      id: 4,
-      type: "recordatorio",
-      title: "Sesión de fisioterapia",
-      message: "Tienes una cita programada para mañana a las 10:00 AM",
-      time: "18:00",
-      date: "Ayer",
-      read: true,
-      icon: "📅",
-    },
- 
-    {
-      id: 6,
-      type: "motivacion",
-      title: "Mensaje motivacional",
-      message: "La constancia es la clave del éxito en tu rehabilitación",
-      time: "07:00",
-      date: "2 días",
-      read: true,
-      icon: "💪",
-    },
   ])
 
   const markAsRead = (id) => {

@@ -93,21 +93,11 @@ function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="Notificaciones"
-        options={{
-          title: "Notificaciones",
-          tabBarIcon: ({ size, color }) => (
-            <MaterialIcons name="notifications" size={size} color={color} />
-          ),
-          href: id_usuario ? "/Notificaciones" : null,
-        }}
-      />
-      <Tabs.Screen
         name="Tips"
         options={{
           title: "Tips",
           tabBarIcon: ({ size, color }) => (
-            <MaterialIcons name="lightbulb" size={size} color={color} />
+            <MaterialIcons name="notifications" size={size} color={color} />
           ),
           href: id_usuario ? "/Tips" : null,
         }}
@@ -128,6 +118,7 @@ function TabsLayout() {
       <Tabs.Screen name="RutinaDetalle" options={{ href: null }} />
       <Tabs.Screen name="+not-found" options={{ href: null }} />
       <Tabs.Screen name="AuthContext" options={{ href: null }} />
+      <Tabs.Screen name="Notificaciones" options={{ href: null }} />
     </Tabs>
   );
 }

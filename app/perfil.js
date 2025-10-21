@@ -14,7 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import { AuthContext } from "./AuthContext"; 
 
 const Perfil = () => {
-  const { id_usuario } = useContext(AuthContext);
+  const { id_usuario, logout, isLoading } = useContext(AuthContext); // Agregamos isLoading
   const [perfil, setPerfil] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -23,19 +23,26 @@ const Perfil = () => {
   const navigation = useNavigation(); 
 
   useEffect(() => {
-    console.log("Valor de id_usuario:", id_usuario);
     const fetchPerfil = async () => {
+      // Esperar a que el contexto esté completamente cargado
+      if (isLoading) {
+        return; // No hacer nada hasta que isLoading sea false
+      }
+
       if (!id_usuario) {
         setError("No se encontró el ID del usuario. Por favor, inicia sesión.");
         setLoading(false);
-        navigation.navigate("login");
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "login" }],
+        });
         return;
       }
 
       try {
         const response = await axios.get(`https://backendcentro.onrender.com/api/perfilcliente/${id_usuario}`);
         console.log("Respuesta del backend (GET):", response.data);
-        const perfilData = response.data; // response.data es un objeto
+        const perfilData = response.data;
         if (!perfilData || !perfilData.id) {
           throw new Error("No se encontraron datos del perfil");
         }
@@ -57,7 +64,7 @@ const Perfil = () => {
     };
 
     fetchPerfil();
-  }, [id_usuario, navigation]);
+  }, [id_usuario, navigation, isLoading]);
 
   // Función para actualizar el perfil
   const handleUpdatePerfil = async () => {
@@ -86,7 +93,8 @@ const Perfil = () => {
     setFormData({ ...formData, [field]: value });
   };
 
-  if (loading) {
+  // Mostrar pantalla de carga mientras el contexto o los datos del perfil están cargando
+  if (isLoading || loading) {
     return <Text>Cargando...</Text>;
   }
 
@@ -194,7 +202,16 @@ const Perfil = () => {
           </View>
 
           {/* Logout Button */}
-          <TouchableOpacity style={styles.logoutButton}>
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={() => {
+              logout();
+              navigation.reset({
+                index: 0,
+                routes: [{ name: "login" }],
+              });
+            }}
+          >
             <Text style={styles.logoutText}>🔓 Cerrar Sesión</Text>
           </TouchableOpacity>
         </View>
@@ -368,10 +385,6 @@ const styles = StyleSheet.create({
     color: "#666",
     marginBottom: 5,
   },
-  memberSince: {
-    fontSize: 12,
-    color: "#666",
-  },
   statsContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -399,41 +412,6 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12,
     color: "#666",
-  },
-  section: {
-    marginBottom: 25,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 15,
-  },
-  achievementsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
-  achievementItem: {
-    width: "48%",
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  achievementIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  achievementEmoji: {
-    fontSize: 24,
-  },
-  achievementText: {
-    fontSize: 12,
-    color: "#333",
-    textAlign: "center",
   },
   menuSection: {
     marginBottom: 25,

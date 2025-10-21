@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
 import { useContext, useEffect, useState } from "react";
+import { Linking } from "react-native";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -21,7 +22,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [expoPushToken, setExpoPushToken] = useState("");
   const router = useRouter();
-  
+
   useEffect(() => {
     const registerForPushNotificationsAsync = async () => {
       let token;
@@ -107,7 +108,7 @@ export default function Login() {
       });
 
       // Redirigir a Rutinas después del login exitoso
-      router.replace("/Rutinas");
+      router.replace("/home");
     } catch (err) {
       setLoading(false);
       console.error("Error en login:", err);
@@ -165,10 +166,14 @@ export default function Login() {
         </TouchableOpacity>
 
         <View style={styles.linksContainer}>
-          <TouchableOpacity onPress={() => router.push("/registro")}>
+          <TouchableOpacity
+            onPress={() => Linking.openURL("https://centrorehabilitacion-sepia.vercel.app/registro")}
+          >
             <Text style={styles.link}>Crear cuenta</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push("/olvide-password")}>
+          <TouchableOpacity
+            onPress={() => Linking.openURL("https://centrorehabilitacion-sepia.vercel.app/verificar_correo")}
+          >
             <Text style={styles.link}>¿Olvidaste tu contraseña?</Text>
           </TouchableOpacity>
         </View>

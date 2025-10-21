@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Dimensions, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+
 const CATEGORIAS = [
   { nombre: "Motivación", key: "motivacion", color: "categoryGreen", icon: "💪", tips: "3 tips" },
   { nombre: "Ejercicios", key: "ejercicio", color: "categoryGreen", icon: "🏃", tips: "4 tips" },
@@ -16,6 +17,7 @@ const Tips = () => {
   const [categoriaTips, setCategoriaTips] = useState([]);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
   const [loadingCategoria, setLoadingCategoria] = useState(false);
+
   const handleCategoriaPress = async (categoria) => {
     setCategoriaSeleccionada(categoria);
     setLoadingCategoria(true);
@@ -23,30 +25,42 @@ const Tips = () => {
     try {
       const res = await fetch(`https://backendcentro.onrender.com/api/categoria-tips/${categoria.key}`);
       const data = await res.json();
+      console.log(`Tips obtenidos para categoría ${categoria.key}:`, data.tips);
       setCategoriaTips(data.tips || []);
     } catch (e) {
+      console.error(`Error al obtener tips para categoría ${categoria.key}:`, e);
       setCategoriaTips([]);
     }
     setLoadingCategoria(false);
   };
 
- useEffect(() => {
-  const fetchNotificaciones = () => {
-    fetch("https://backendcentro.onrender.com/api/notificaciones/recientes")
-      .then(res => res.json())
-      .then(data => {
-        setNotificaciones(data.notificaciones || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  };
+  useEffect(() => {
+    const fetchNotificaciones = () => {
+      console.log('Realizando fetch a /api/notificaciones/recientes');
+      fetch("https://backendcentro.onrender.com/api/notificaciones/recientes")
+        .then(res => res.json())
+        .then(data => {
+          console.log('Notificaciones recibidas:', data.notificaciones);
+          setNotificaciones(data.notificaciones || []);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error('Error al obtener notificaciones:', err);
+          setLoading(false);
+        });
+    };
 
-  fetchNotificaciones();
+    fetchNotificaciones();
+    const interval = setInterval(() => {
+      console.log('Intervalo de polling ejecutado');
+      fetchNotificaciones();
+    }, 30000); // Cada 30 segundos
 
-  const interval = setInterval(fetchNotificaciones, 60000); // Cada minuto PRUEBAS
-
-  return () => clearInterval(interval);
-}, []);
+    return () => {
+      console.log('Limpiando intervalo de polling');
+      clearInterval(interval);
+    };
+  }, []);
 
   const notificacionActual = notificaciones[0];
 
@@ -79,7 +93,7 @@ const Tips = () => {
         />
       </View>
 
-      {/* Daily Motivation Card - Notificación actual */}
+      {/* Daily Motivation Card - Notificación más reciente */}
       <View style={styles.motivationCard}>
         {loading ? (
           <ActivityIndicator style={{ marginVertical: 20 }} />
@@ -89,14 +103,11 @@ const Tips = () => {
               <View style={styles.motivationIcon}>
                 <Text style={styles.bulbIcon}>💡</Text>
               </View>
-              <Text style={styles.motivationDate}>
-                {new Date(notificacionActual.fecha_envio).toLocaleDateString()}
-              </Text>
+              <Text style={styles.motivationDate}>Notificación Reciente</Text>
             </View>
             <Text style={styles.motivationTitle}>{notificacionActual.titulo}</Text>
             <Text style={styles.motivationText}>{notificacionActual.mensaje}</Text>
             <View style={styles.motivationActions}>
-          
               <TouchableOpacity style={styles.bookmarkButton}>
                 <Text style={styles.bookmarkIcon}>🔖</Text>
               </TouchableOpacity>
@@ -111,7 +122,7 @@ const Tips = () => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Categorías</Text>
         <View style={styles.categoriesGrid}>
-          {CATEGORIAS.map((cat, idx) => (
+          {CATEGORIAS.map((cat) => (
             <TouchableOpacity
               key={cat.key}
               style={[styles.categoryCard, styles[cat.color]]}
@@ -125,53 +136,51 @@ const Tips = () => {
             </TouchableOpacity>
           ))}
         </View>
-      {/* Modal para mostrar tips de la categoría seleccionada */}
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }}>
-          <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, width: '85%', maxHeight: '80%' }}>
-            <Text style={{ fontSize: 22, fontWeight: 'bold', marginBottom: 10, textAlign: 'center' }}>
-              {categoriaSeleccionada ? categoriaSeleccionada.nombre : ''} - Tips
-            </Text>
-            {loadingCategoria ? (
-              <ActivityIndicator style={{ marginVertical: 20 }} />
-            ) : categoriaTips.length > 0 ? (
-              <ScrollView style={{ maxHeight: 350 }}>
-                {categoriaTips.map((tip) => (
-                  <View key={tip.id_notificacion} style={{ marginBottom: 18, borderBottomWidth: 1, borderColor: '#eee', paddingBottom: 10 }}>
-                    <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{tip.titulo}</Text>
-                    <Text style={{ color: '#555', marginTop: 2 }}>{tip.mensaje}</Text>
-                    <Text style={{ color: '#999', fontSize: 12, marginTop: 2 }}>{new Date(tip.fecha_envio).toLocaleDateString()}</Text>
-                  </View>
-                ))}
-              </ScrollView>
-            ) : (
-              <Text style={{ textAlign: 'center', color: '#888', marginVertical: 20 }}>No hay tips en esta categoría.</Text>
-            )}
-            <Pressable
-              style={{ marginTop: 15, backgroundColor: '#007AFF', borderRadius: 8, padding: 10 }}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={{ color: '#fff', textAlign: 'center', fontWeight: 'bold' }}>Cerrar</Text>
-            </Pressable>
+        {/* Modal para mostrar tips de la categoría seleccionada */}
+        <Modal
+          visible={modalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }}>
+            <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, width: '85%', maxHeight: '80%' }}>
+              <Text style={{ fontSize: 22, fontWeight: 'bold', marginBottom: 10, textAlign: 'center' }}>
+                {categoriaSeleccionada ? categoriaSeleccionada.nombre : ''} - Tips
+              </Text>
+              {loadingCategoria ? (
+                <ActivityIndicator style={{ marginVertical: 20 }} />
+              ) : categoriaTips.length > 0 ? (
+                <ScrollView style={{ maxHeight: 350 }}>
+                  {categoriaTips.map((tip) => (
+                    <View key={tip.id_notificacion} style={{ marginBottom: 18, borderBottomWidth: 1, borderColor: '#eee', paddingBottom: 10 }}>
+                      <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{tip.titulo}</Text>
+                      <Text style={{ color: '#555', marginTop: 2 }}>{tip.mensaje}</Text>
+                    </View>
+                  ))}
+                </ScrollView>
+              ) : (
+                <Text style={{ textAlign: 'center', color: '#888', marginVertical: 20 }}>No hay tips en esta categoría.</Text>
+              )}
+              <Pressable
+                style={{ marginTop: 15, backgroundColor: '#007AFF', borderRadius: 8, padding: 10 }}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={{ color: '#fff', textAlign: 'center', fontWeight: 'bold' }}>Cerrar</Text>
+              </Pressable>
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
       </View>
 
       {/* Recent Tips Section */}
-          <View style={styles.section}>
+      <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Tips Recientes</Text>
         </View>
-
         <View style={styles.tipsList}>
-          {notificaciones.slice(1).map((tip, idx) => (
-            <TouchableOpacity style={styles.tipItem} key={idx}>
+          {notificaciones.slice(1).map((tip) => (
+            <TouchableOpacity style={styles.tipItem} key={tip.id_notificacion}>
               <View style={styles.tipIcon}>
                 <Text style={styles.tipIconText}>💡</Text>
               </View>
@@ -180,9 +189,6 @@ const Tips = () => {
                 <Text style={styles.tipSubtitle}>{tip.mensaje}</Text>
               </View>
               <View style={styles.tipMeta}>
-                <Text style={styles.tipDate}>
-                  {new Date(tip.fecha_envio).toLocaleDateString()}
-                </Text>
                 <Text style={styles.tipBookmark}>🔖</Text>
               </View>
             </TouchableOpacity>
@@ -198,8 +204,8 @@ const Tips = () => {
         <Text style={styles.quoteAuthor}>- Centro de Rehabilitación San Juan</Text>
       </View>
     </ScrollView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -226,18 +232,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "white",
     opacity: 0.9,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarText: {
-    fontSize: 20,
-    color: "white",
   },
   titleSection: {
     paddingHorizontal: 20,
@@ -315,23 +309,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 20,
-  },
-  heartIcon: {
-    fontSize: 16,
-    marginRight: 5,
-  },
-  shareIcon: {
-    fontSize: 16,
-    marginRight: 5,
-  },
-  actionText: {
-    fontSize: 14,
-    color: "#666",
-  },
   bookmarkButton: {
     marginLeft: "auto",
   },
@@ -352,10 +329,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#333",
-  },
-  seeAllText: {
-    fontSize: 14,
-    color: "#7CB342",
   },
   categoriesGrid: {
     flexDirection: "row",
@@ -450,11 +423,6 @@ const styles = StyleSheet.create({
   tipMeta: {
     alignItems: "flex-end",
   },
-  tipDate: {
-    fontSize: 12,
-    color: "#999",
-    marginBottom: 5,
-  },
   tipBookmark: {
     fontSize: 16,
   },
@@ -479,6 +447,6 @@ const styles = StyleSheet.create({
     color: "#666",
     fontWeight: "500",
   },
-})
+});
 
-export default Tips
+export default Tips;

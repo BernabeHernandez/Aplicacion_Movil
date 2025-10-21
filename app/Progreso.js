@@ -1,7 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, Animated, Easing } from "react-native";
 import { useState, useEffect, useContext, useCallback, useRef } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import axios from "axios";
 import { AuthContext } from "./AuthContext";
 
 const Progreso = () => {
@@ -9,18 +8,12 @@ const Progreso = () => {
   const [weekDays, setWeekDays] = useState([]);
   const [totalDiasCompletados, setTotalDiasCompletados] = useState(0);
   const [completadas, setCompletadas] = useState({ completadas: 0, total: 0 });
-  const [asignaciones, setAsignaciones] = useState([]);
+  const [rutinas, setRutinas] = useState([]);
   const [fechasCompletadas, setFechasCompletadas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastFetchTime, setLastFetchTime] = useState(0); // Para controlar refresco
 
   const API_BASE_URL = "https://backendcentro.onrender.com";
-
-  const normalizeDate = (date) => {
-    const normalized = new Date(date);
-    normalized.setHours(0, 0, 0, 0);
-    return normalized;
-  };
 
   // Generar los días de la semana según la fecha actual
   const generarDiasSemana = (fechasCompletadas) => {
@@ -34,13 +27,14 @@ const Progreso = () => {
       { day: "Dom", number: 7, completed: false },
     ];
 
-    const today = normalizeDate(new Date());
+    const today = new Date();
     const inicioSemana = new Date(today);
-    inicioSemana.setDate(today.getDate() - today.getDay() + 1);
+    // Ajustar para que el lunes sea el primer día de la semana
+    const dayOfWeek = today.getDay() === 0 ? 6 : today.getDay() - 1; // Domingo (0) -> 6, Lunes (1) -> 0, etc.
+    inicioSemana.setDate(today.getDate() - dayOfWeek);
 
-    const fechasNormalizadas = fechasCompletadas.map((fecha) =>
-      normalizeDate(fecha).toISOString().split("T")[0]
-    );
+    // Normalizar fechas completadas al formato YYYY-MM-DD
+    const fechasNormalizadas = fechasCompletadas.map((fecha) => new Date(fecha).toISOString().split("T")[0]);
 
     return dias.map((dia, index) => {
       const diaFecha = new Date(inicioSemana);
@@ -52,19 +46,16 @@ const Progreso = () => {
   };
 
   // Calcular completadas y total de rutinas por día
-  const calcularCompletadas = (asignaciones, progresos, fecha = new Date()) => {
-    const fechaNormalizada = normalizeDate(fecha);
-    const asignacionesDelDia = asignaciones.filter((a) => {
-      const inicio = normalizeDate(a.fecha_inicio);
-      const fin = a.fecha_fin ? normalizeDate(a.fecha_fin) : inicio;
-      return fechaNormalizada >= inicio && fechaNormalizada <= fin;
+  const calcularCompletadas = (rutinas, fecha = new Date()) => {
+    const today = fecha.toISOString().split("T")[0];
+    const todayRoutines = rutinas.filter((routine) => {
+      const startDate = routine.fecha_inicio ? routine.fecha_inicio.split("T")[0] : null;
+      const endDate = routine.fecha_fin ? routine.fecha_fin.split("T")[0] : null;
+      return startDate && endDate && today >= startDate && today <= endDate;
     });
 
-    const total = asignacionesDelDia.length;
-    const completadas = asignacionesDelDia.filter((a) => {
-      const pasosAsignacion = progresos.filter((p) => p.id_asignacion === a.id);
-      return pasosAsignacion.length > 0 && pasosAsignacion.every((p) => p.estado === "completado");
-    }).length;
+    const total = todayRoutines.length;
+    const completadas = todayRoutines.filter((routine) => routine.estado === "completada").length;
 
     return { completadas, total };
   };
@@ -135,39 +126,39 @@ const Progreso = () => {
     const MIN_FETCH_INTERVAL = 30000; // 30 segundos como mínimo entre refetchs
 
     // Si ya cargó recientemente, usa datos cached
-    if (timeSinceLastFetch < MIN_FETCH_INTERVAL && asignaciones.length > 0) {
+    if (timeSinceLastFetch < MIN_FETCH_INTERVAL && rutinas.length > 0) {
       setLoading(false);
       return;
     }
 
     setLoading(true);
     try {
-      const asignacionesRes = await axios.get(`${API_BASE_URL}/api/asignaciones_rutinas/usuario/${id_usuario}`);
-      const asignacionesData = asignacionesRes.data;
+      const response = await fetch(`${API_BASE_URL}/api/rutinas/usuario/${id_usuario}`);
+      const rutinasData = await response.json();
+      if (!response.ok) {
+        throw new Error(rutinasData.error || "Error al obtener rutinas");
+      }
 
-      const progresosPromises = asignacionesData.map((a) =>
-        axios.get(`${API_BASE_URL}/api/progresos/asignacion/${a.id}`)
-      );
-      const progresosResponses = await Promise.all(progresosPromises);
-      const progresosData = progresosResponses.flatMap((res) => res.data);
-
-      const fechasCompletadasRes = await axios.get(`${API_BASE_URL}/api/completaciones_diarias/usuario/${id_usuario}/fechas`);
-      const fechasCompletadasData = fechasCompletadasRes.data;
+      const fechasCompletadasRes = await fetch(`${API_BASE_URL}/api/completaciones_diarias/usuario/${id_usuario}/fechas`);
+      const fechasCompletadasData = await fechasCompletadasRes.json();
+      if (!fechasCompletadasRes.ok) {
+        throw new Error(fechasCompletadasData.error || "Error al obtener fechas completadas");
+      }
 
       console.log("Fechas completadas recibidas:", fechasCompletadasData);
+      console.log("Rutinas recibidas:", rutinasData);
 
-      setAsignaciones(asignacionesData);
+      setRutinas(rutinasData);
       setFechasCompletadas(fechasCompletadasData);
       setTotalDiasCompletados(fechasCompletadasData.length);
       setWeekDays(generarDiasSemana(fechasCompletadasData));
-      setCompletadas(calcularCompletadas(asignacionesData, progresosData));
+      setCompletadas(calcularCompletadas(rutinasData));
       setLastFetchTime(now);
     } catch (error) {
       console.error("Error fetching data:", error);
-      // Si falla, sigue usando datos cached
       setLoading(false);
     }
-  }, [id_usuario, asignaciones.length, lastFetchTime]);
+  }, [id_usuario, rutinas.length, lastFetchTime]);
 
   // Ejecutar fetch cada vez que la pantalla gana foco
   useFocusEffect(
@@ -195,8 +186,8 @@ const Progreso = () => {
     return <Text>Por favor, inicia sesión para ver tu progreso.</Text>;
   }
 
-  // Calcular el total de asignaciones (todas las rutinas asignadas al usuario)
-  const totalAsignaciones = asignaciones.length;
+  // Calcular el total de rutinas (todas las rutinas asignadas al usuario)
+  const totalRutinas = rutinas.length;
 
   return (
     <ScrollView style={styles.container}>
@@ -266,7 +257,7 @@ const Progreso = () => {
               <Text style={styles.statIcon}>📊</Text>
               <Text style={styles.statLabel}>Promedio diario</Text>
             </View>
-            <Text style={styles.statValue}>{totalAsignaciones} rutinas</Text>
+            <Text style={styles.statValue}>{totalRutinas} rutinas</Text>
           </View>
         </View>
 
