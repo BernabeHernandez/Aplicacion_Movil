@@ -14,7 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import { AuthContext } from "./AuthContext"; 
 
 const Perfil = () => {
-  const { id_usuario, logout, isLoading } = useContext(AuthContext); // Agregamos isLoading
+  const { id_usuario, logout, isLoading } = useContext(AuthContext);
   const [perfil, setPerfil] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -24,9 +24,8 @@ const Perfil = () => {
 
   useEffect(() => {
     const fetchPerfil = async () => {
-      // Esperar a que el contexto esté completamente cargado
       if (isLoading) {
-        return; // No hacer nada hasta que isLoading sea false
+        return;
       }
 
       if (!id_usuario) {
@@ -66,7 +65,6 @@ const Perfil = () => {
     fetchPerfil();
   }, [id_usuario, navigation, isLoading]);
 
-  // Función para actualizar el perfil
   const handleUpdatePerfil = async () => {
     try {
       await axios.put(`https://backendcentro.onrender.com/api/perfilcliente/${id_usuario}`, formData);
@@ -83,17 +81,14 @@ const Perfil = () => {
     }
   };
 
-  // Función para cerrar el modal sin guardar
   const handleCloseModal = () => {
     setShowModal(false);
   };
 
-  // Función para actualizar los campos del formulario
   const handleInputChange = (field, value) => {
     setFormData({ ...formData, [field]: value });
   };
 
-  // Mostrar pantalla de carga mientras el contexto o los datos del perfil están cargando
   if (isLoading || loading) {
     return <Text>Cargando...</Text>;
   }

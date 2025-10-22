@@ -47,7 +47,7 @@ const RutinaDetalle = () => {
   const isCompleted = completedSteps === totalExercises && totalExercises > 0
   const progress = totalExercises > 0 ? (completedSteps / totalExercises) * 100 : 0
 
-  // Resetear estados clave cuando cambia id_rutina (fix para navegación en misma pantalla)
+  // Resetear estados clave cuando cambia id_rutina
   useEffect(() => {
     setAsignacionId(null)
     setProgresos([])
@@ -95,7 +95,7 @@ const RutinaDetalle = () => {
         // Busca asignaciones (pendiente, en_progreso o completada) para esta rutina
         const asignacionesValidas = asignaciones
           .filter(a => a.id_rutina === id_rutina && ['pendiente', 'en_progreso', 'completada'].includes(a.estado))
-          .sort((a, b) => b.id - a.id) // Ordena por ID descendente (más reciente primero)
+          .sort((a, b) => b.id - a.id)
         
         const asignacionExistente = asignacionesValidas[0]
         

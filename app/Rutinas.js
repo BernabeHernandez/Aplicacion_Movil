@@ -30,9 +30,7 @@ const Rutinas = () => {
   };
 
   useEffect(() => {
-    // Espera a que id_usuario exista
     if (!id_usuario) {
-      // Redirige al login si no hay usuario
       router.replace("/login");
       return;
     }
@@ -68,7 +66,6 @@ const Rutinas = () => {
 
   const getRoutineImage = (routine) => {
     if (Array.isArray(routine.pasos) && routine.pasos.length > 0) {
-      // Busca el primer paso con imagen no vacía
       const pasoConImagen = routine.pasos.find((p) => p.imagen && p.imagen !== "");
       if (pasoConImagen) return pasoConImagen.imagen;
     }

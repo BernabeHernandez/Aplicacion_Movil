@@ -56,7 +56,6 @@ function TabsLayout() {
           tabBarIcon: ({ size, color }) => (
             <MaterialIcons name="login" size={size} color={color} />
           ),
-          // Ocultar del tab bar si está autenticado
           href: id_usuario ? null : "/login",
         }}
       />

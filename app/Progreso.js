@@ -11,11 +11,10 @@ const Progreso = () => {
   const [rutinas, setRutinas] = useState([]);
   const [fechasCompletadas, setFechasCompletadas] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [lastFetchTime, setLastFetchTime] = useState(0); // Para controlar refresco
+  const [lastFetchTime, setLastFetchTime] = useState(0);
 
   const API_BASE_URL = "https://backendcentro.onrender.com";
 
-  // Generar los días de la semana según la fecha actual
   const generarDiasSemana = (fechasCompletadas) => {
     const dias = [
       { day: "Lun", number: 1, completed: false },
@@ -29,8 +28,7 @@ const Progreso = () => {
 
     const today = new Date();
     const inicioSemana = new Date(today);
-    // Ajustar para que el lunes sea el primer día de la semana
-    const dayOfWeek = today.getDay() === 0 ? 6 : today.getDay() - 1; // Domingo (0) -> 6, Lunes (1) -> 0, etc.
+    const dayOfWeek = today.getDay() === 0 ? 6 : today.getDay() - 1;
     inicioSemana.setDate(today.getDate() - dayOfWeek);
 
     // Normalizar fechas completadas al formato YYYY-MM-DD
@@ -60,7 +58,6 @@ const Progreso = () => {
     return { completadas, total };
   };
 
-  // Animaciones para los tres puntos
   const bounceValue1 = useRef(new Animated.Value(0)).current;
   const bounceValue2 = useRef(new Animated.Value(0)).current;
   const bounceValue3 = useRef(new Animated.Value(0)).current;
@@ -114,7 +111,6 @@ const Progreso = () => {
     outputRange: [0, -15],
   });
 
-  // Memoizar la función fetch para performance
   const fetchData = useCallback(async () => {
     if (!id_usuario) {
       setLoading(false);
@@ -123,7 +119,7 @@ const Progreso = () => {
 
     const now = Date.now();
     const timeSinceLastFetch = now - lastFetchTime;
-    const MIN_FETCH_INTERVAL = 30000; // 30 segundos como mínimo entre refetchs
+    const MIN_FETCH_INTERVAL = 30000;
 
     // Si ya cargó recientemente, usa datos cached
     if (timeSinceLastFetch < MIN_FETCH_INTERVAL && rutinas.length > 0) {
@@ -160,14 +156,13 @@ const Progreso = () => {
     }
   }, [id_usuario, rutinas.length, lastFetchTime]);
 
-  // Ejecutar fetch cada vez que la pantalla gana foco
   useFocusEffect(
     useCallback(() => {
       fetchData();
     }, [fetchData])
   );
 
-  // Opcional: useEffect inicial si necesitas algo al montar
+
   useEffect(() => {}, []);
 
   if (loading) {
@@ -186,7 +181,6 @@ const Progreso = () => {
     return <Text>Por favor, inicia sesión para ver tu progreso.</Text>;
   }
 
-  // Calcular el total de rutinas (todas las rutinas asignadas al usuario)
   const totalRutinas = rutinas.length;
 
   return (

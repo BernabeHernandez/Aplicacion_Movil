@@ -12,20 +12,16 @@ export const AuthProvider = ({ children }) => {
   const [id_usuario, setIdUsuario] = useState(null);
   const [userData, setUserData] = useState(null);
 
-  // Función para hacer login y guardar datos
   const login = ({ id, tipo, user }) => {
     setIdUsuario(id);
     setUserData({ tipo, user });
-    // Opcional: Guardar datos en AsyncStorage para persistencia
     AsyncStorage.setItem("userData", JSON.stringify({ id, tipo, user }));
   };
 
-  // Función para cerrar sesión
   const logout = async () => {
     try {
       setIdUsuario(null);
       setUserData(null);
-      // Eliminar datos almacenados en AsyncStorage
       await AsyncStorage.removeItem("userData");
     } catch (error) {
       console.error("Error al cerrar sesión:", error);

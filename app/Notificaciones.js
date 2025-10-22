@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView } from "react-native"
 
@@ -106,7 +104,6 @@ const Notificaciones = () => {
           ))}
         </View>
 
-        {/* Empty State (if no notifications) */}
         {notifications.length === 0 && (
           <View style={styles.emptyState}>
             <Text style={styles.emptyIcon}>🔔</Text>

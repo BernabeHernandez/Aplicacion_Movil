@@ -31,7 +31,7 @@ const Home = () => {
       const data = await response.json();
       if (response.ok) {
         // Filtrar rutinas activas basadas en el rango de fechas (fecha_inicio a fecha_fin)
-        const today = new Date().toISOString().split("T")[0]; // Fecha actual en formato YYYY-MM-DD
+        const today = new Date().toISOString().split("T")[0];
         const todayRoutines = data.filter((routine) => {
           const startDate = routine.fecha_inicio ? routine.fecha_inicio.split("T")[0] : null;
           const endDate = routine.fecha_fin ? routine.fecha_fin.split("T")[0] : null;
@@ -45,8 +45,7 @@ const Home = () => {
 
         // Mapear todas las rutinas activas para "Rutinas Recomendadas"
         const allRoutines = todayRoutines.map((routine) => {
-          // Calcular duración total basada en pasos si existen
-          let duracion_total = 15; // Valor por defecto
+          let duracion_total = 15;
           if (routine.pasos && routine.pasos.length > 0) {
             duracion_total = routine.pasos.reduce((sum, paso) => sum + (paso.tiempo_estimado * paso.repeticiones), 0);
           }
@@ -57,7 +56,7 @@ const Home = () => {
             descripcion: routine.descripcion,
             duracion_total: duracion_total,
             dificultad: routine.dificultad || "Fácil",
-            estado: routine.estado, // Incluir estado para diferenciar completadas
+            estado: routine.estado,
           };
         });
 
