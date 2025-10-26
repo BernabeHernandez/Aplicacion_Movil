@@ -8,8 +8,8 @@ on:
     branches: [ "main", "develop" ]
 
 jobs:
-  build-and-test:
-    name: Build and Test
+  ci-pipeline:
+    name: CI Pipeline
     runs-on: ubuntu-latest
     
     strategy:
@@ -17,46 +17,46 @@ jobs:
         node-version: [20.x]
     
     steps:
-      # ========================================
-      # ETAPA 1: CHECKOUT DEL CÓDIGO
-      # ========================================
+
+      # ==============================
+      # BLOQUE 1: BUILD
+      # ==============================
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
       
-      # ========================================
-      # ETAPA 2: SETUP DE NODE.JS
-      # ========================================
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
       
-      # ========================================
-      # ETAPA 3: INSTALACIÓN DE DEPENDENCIAS
-      # ========================================
       - name: Install dependencies
         run: |
           echo "Installing dependencies..."
           npm ci
           echo "Dependencies installed successfully"
       
-      # ========================================
-      # ETAPA 4: EJECUCIÓN DE PRUEBAS UNITARIAS
-      # ========================================
+      - name: 🏗️ Build project
+        run: |
+          echo "Building project..."
+          npm run build --if-present || echo "Build not configured for React Native/Expo"
+        continue-on-error: true
+
+      # ==============================
+      # BLOQUE 2: TESTS
+      # ==============================
       - name: Run unit tests
         run: |
           echo "Running unit tests with coverage..."
           npm test -- --coverage --watchAll=false --verbose
           echo "Tests completed"
-      
-      # ========================================
-      # ETAPA 5: BUILD DEL PROYECTO
-      # ========================================
-      - name: Build project
+
+      # ==============================
+      # BLOQUE 3: DEPLOY
+      # ==============================
+      # Aquí solo dejamos un placeholder, ya que el deploy no está configurado
+      - name: Deploy placeholder
         run: |
-          echo "Building project..."
-          npm run build --if-present || echo " Build not configured for React Native/Expo"
-        continue-on-error: true
+          echo "Deployment stage - configure deploy scripts here if needed"
