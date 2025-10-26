@@ -65,7 +65,7 @@ jobs:
       # ETAPA 6: GENERACIÓN DE REPORTES
       # ========================================
       - name: 📊 Upload coverage reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: coverage-report-${{ matrix.node-version }}
@@ -73,13 +73,11 @@ jobs:
           retention-days: 30
       
       - name: 📋 Upload test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: test-results-${{ matrix.node-version }}
-          path: |
-            coverage/
-            junit.xml
+          path: coverage/
           retention-days: 30
       
       # ========================================
@@ -111,7 +109,6 @@ jobs:
             let coverageData = 'Coverage data not available';
             
             try {
-              // Leer el resumen de cobertura si existe
               if (fs.existsSync('coverage/coverage-summary.json')) {
                 const coverage = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
                 const total = coverage.total;
