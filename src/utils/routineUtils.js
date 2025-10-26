@@ -1,6 +1,3 @@
-// src/utils/routineUtils.js
-// Funciones utilitarias extraídas de Rutinas.js y RutinaDetalle.js
-
 /**
  * Valida los datos de una rutina
  * @param {Object} routine - Datos de la rutina

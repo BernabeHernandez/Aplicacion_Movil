@@ -1,4 +1,3 @@
-// src/utils/__tests__/routineUtils.test.js
 import {
     validateRoutineData,
     calculateRoutineMetrics,
@@ -12,9 +11,7 @@ import {
   
   describe('routineUtils - Pruebas Unitarias', () => {
     
-    // ============================================
     // PRUEBAS POSITIVAS
-    // ============================================
     
     describe('Pruebas Positivas - validateRoutineData', () => {
       test('debe validar correctamente una rutina completa', () => {
@@ -63,7 +60,7 @@ import {
         const result = calculateRoutineMetrics(routine);
   
         expect(result.totalExercises).toBe(3);
-        expect(result.totalDuration).toBe(1080); // (5+10+3)*60 = 1080 segundos
+        expect(result.totalDuration).toBe(1080); 
         expect(result.totalDurationMinutes).toBe(18);
         expect(result.exercises).toEqual(['Ejercicio 1', 'Ejercicio 2', 'Ejercicio 3']);
       });
@@ -79,7 +76,7 @@ import {
         const result = calculateRoutineMetrics(routine);
   
         expect(result.totalExercises).toBe(1);
-        expect(result.totalDuration).toBe(150); // 2.5 * 60 = 150 segundos
+        expect(result.totalDuration).toBe(150); 
       });
   
       test('debe calcular correctamente rutinas largas', () => {
@@ -91,7 +88,7 @@ import {
         const result = calculateRoutineMetrics(routine);
   
         expect(result.totalExercises).toBe(10);
-        expect(result.totalDuration).toBe(3000); // 10 * 5 * 60
+        expect(result.totalDuration).toBe(3000); 
         expect(result.totalDurationMinutes).toBe(50);
       });
     });
@@ -171,9 +168,7 @@ import {
       });
     });
   
-    // ============================================
     // PRUEBAS NEGATIVAS
-    // ============================================
   
     describe('Pruebas Negativas - validateRoutineData', () => {
       test('debe rechazar rutina con datos incompletos (sin título)', () => {
@@ -292,8 +287,7 @@ import {
   
         const result = calculateRoutineMetrics(routine);
   
-        // Cada ejercicio con tiempo inválido debe usar 180 segundos por defecto
-        expect(result.totalDuration).toBe(360); // 2 * 180
+        expect(result.totalDuration).toBe(360); 
       });
     });
   
@@ -358,9 +352,7 @@ import {
       });
     });
   
-    // ============================================
     // CASOS EXTREMOS
-    // ============================================
   
     describe('Casos Extremos', () => {
       test('debe manejar rutinas con muchos ejercicios', () => {
@@ -372,7 +364,7 @@ import {
         const result = calculateRoutineMetrics(routine);
   
         expect(result.totalExercises).toBe(100);
-        expect(result.totalDuration).toBe(6000); // 100 * 1 * 60
+        expect(result.totalDuration).toBe(6000); 
       });
   
       test('debe manejar tiempos muy pequeños', () => {
@@ -383,18 +375,17 @@ import {
   
         const result = calculateRoutineMetrics(routine);
   
-        expect(result.totalDuration).toBe(6); // 0.1 * 60
+        expect(result.totalDuration).toBe(6); 
       });
   
       test('debe formatear correctamente tiempos muy largos', () => {
-        expect(formatTime(7200)).toBe('120:00'); // 2 horas
-        expect(formatTime(86400)).toBe('1440:00'); // 24 horas
+        expect(formatTime(7200)).toBe('120:00'); 
+        expect(formatTime(86400)).toBe('1440:00'); 
       });
     });
   
-    // ============================================
     // FUNCIONES ADICIONALES
-    // ============================================
+
   
     describe('validateRoutineParams', () => {
       test('debe validar parámetros correctos', () => {

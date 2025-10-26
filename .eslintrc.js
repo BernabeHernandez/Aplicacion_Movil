@@ -1,4 +1,3 @@
-// .eslintrc.js
 module.exports = {
     root: true,
     extends: [
@@ -26,17 +25,16 @@ module.exports = {
     },
     overrides: [
       {
-        // Configuración específica para archivos de test
         files: [
           '**/__tests__/**/*.[jt]s?(x)',
           '**/?(*.)+(spec|test).[jt]s?(x)',
           '**/jest.setup.js',
         ],
         env: {
-          jest: true, // Esto habilita las variables globales de Jest
+          jest: true, 
         },
         rules: {
-          'no-undef': 'off', // Desactiva errores de variables no definidas en tests
+          'no-undef': 'off', 
         },
       },
     ],

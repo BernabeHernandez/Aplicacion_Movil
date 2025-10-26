@@ -1,16 +1,10 @@
-// e2e/simple.e2e.test.js
-// Pruebas E2E simuladas (sin necesidad de emulador)
-// Para testing en CI/CD sin hardware real
-
 describe('Pruebas E2E - Flujo de Usuario', () => {
   
-    // Mock de las funciones de la aplicación
     const mockApp = {
       rutinas: [],
       currentUser: { id: 1, nombre: 'Usuario Test' },
       
       cargarRutinas: async (categoria) => {
-        // Simular llamada API
         return new Promise((resolve) => {
           setTimeout(() => {
             resolve([
@@ -41,9 +35,7 @@ describe('Pruebas E2E - Flujo de Usuario', () => {
       },
     };
   
-    // ============================================
     // PRUEBAS POSITIVAS
-    // ============================================
     
     describe('Prueba Positiva - Ver Rutinas', () => {
       test('debe cargar lista de rutinas correctamente', async () => {
@@ -96,11 +88,9 @@ describe('Pruebas E2E - Flujo de Usuario', () => {
         let estado = mockApp.iniciarEjercicio(1, 1);
         expect(estado.status).toBe('iniciado');
         
-        // Simular pausa
         estado = { ...estado, status: 'pausado' };
         expect(estado.status).toBe('pausado');
         
-        // Simular reanudación
         estado = { ...estado, status: 'iniciado' };
         expect(estado.status).toBe('iniciado');
       });
@@ -117,8 +107,6 @@ describe('Pruebas E2E - Flujo de Usuario', () => {
       test('debe permitir navegar al siguiente ejercicio', () => {
         mockApp.completarEjercicio(1, 1);
         const detalle = mockApp.verDetalleRutina(1);
-        
-        // Verificar que hay más ejercicios
         expect(detalle.ejercicios.length).toBeGreaterThan(1);
       });
     });
@@ -145,9 +133,7 @@ describe('Pruebas E2E - Flujo de Usuario', () => {
       });
     });
   
-    // ============================================
     // PRUEBAS NEGATIVAS
-    // ============================================
   
     describe('Prueba Negativa - Error al cargar rutinas', () => {
       test('debe manejar error cuando no hay rutinas disponibles', async () => {
@@ -177,7 +163,6 @@ describe('Pruebas E2E - Flujo de Usuario', () => {
       test('debe rechazar iniciar ejercicio con ID inválido', () => {
         const resultado = mockApp.iniciarEjercicio(null, null);
         
-        // En producción, esto debería lanzar error o retornar error
         expect(resultado).toBeDefined();
       });
   
@@ -191,11 +176,8 @@ describe('Pruebas E2E - Flujo de Usuario', () => {
   
     describe('Prueba Negativa - Manejo de estados', () => {
       test('debe prevenir completar ejercicio sin iniciarlo', () => {
-        // En producción, esto debería validarse
         const detalle = mockApp.verDetalleRutina(1);
         const ejercicio = detalle.ejercicios[0];
-        
-        // Estado inicial debe ser 'pendiente'
         const estadoInicial = 'pendiente';
         expect(estadoInicial).toBe('pendiente');
       });
@@ -207,31 +189,24 @@ describe('Pruebas E2E - Flujo de Usuario', () => {
         expect(ejercicioInexistente).toBeUndefined();
       });
     });
-  
-    // ============================================
+   
     // FLUJO COMPLETO E2E
-    // ============================================
   
     describe('Flujo E2E Completo', () => {
       test('debe completar el flujo: Ver rutinas -> Detalle -> Iniciar -> Completar -> Perfil', async () => {
-        // 1. Cargar rutinas
         const rutinas = await mockApp.cargarRutinas('Cervical');
         expect(rutinas.length).toBeGreaterThan(0);
         
-        // 2. Ver detalle
         const detalle = mockApp.verDetalleRutina(rutinas[0].id);
         expect(detalle.ejercicios.length).toBeGreaterThan(0);
         
-        // 3. Iniciar ejercicio
         const iniciado = mockApp.iniciarEjercicio(rutinas[0].id, detalle.ejercicios[0].id);
         expect(iniciado.status).toBe('iniciado');
         
-        // 4. Completar ejercicio
         const completado = mockApp.completarEjercicio(rutinas[0].id, detalle.ejercicios[0].id);
         expect(completado.status).toBe('completado');
         expect(completado.progreso).toBeGreaterThan(0);
         
-        // 5. Verificar perfil actualizado
         const usuario = mockApp.currentUser;
         expect(usuario).toBeDefined();
         
@@ -242,13 +217,12 @@ describe('Pruebas E2E - Flujo de Usuario', () => {
         const rutinas = await mockApp.cargarRutinas('Lumbar');
         const detalle = mockApp.verDetalleRutina(rutinas[1].id);
         
-        // Completar todos los ejercicios
         let progresoTotal = 0;
         detalle.ejercicios.forEach((ejercicio, index) => {
           mockApp.iniciarEjercicio(rutinas[1].id, ejercicio.id);
           const resultado = mockApp.completarEjercicio(rutinas[1].id, ejercicio.id);
           expect(resultado.status).toBe('completado');
-          progresoTotal += 50; // Asumiendo 2 ejercicios
+          progresoTotal += 50;
         });
         
         expect(progresoTotal).toBe(100);

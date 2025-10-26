@@ -1,4 +1,3 @@
-// src/utils/__tests__/apiIntegration.test.js
 import MockAdapter from 'axios-mock-adapter';
 import axios from 'axios';
 import {
@@ -24,7 +23,7 @@ describe('Integración Frontend-Backend para Rutinas, Detalle Rutinas y Perfil',
     axiosMock.reset();
   });
 
-  // === Rutinas ===
+  //  Rutinas
   test('Positiva: carga rutinas correctamente', async () => {
     const mockRoutines = [
       { id_rutina: 1, titulo: 'Rutina Cervical', pasos: [{ id_paso: 1, nombre: 'Estiramiento lateral', tiempo_estimado: 5 }] },
@@ -60,7 +59,7 @@ describe('Integración Frontend-Backend para Rutinas, Detalle Rutinas y Perfil',
     await expect(fetchRoutines(id_usuario, categoriaId)).rejects.toThrow('Error al cargar rutinas: 500 Server error');
   });
 
-  // === Rutina Detalle: Asignaciones ===
+  //Rutina Detalle: Asignaciones
   test('Positiva: carga asignaciones correctamente', async () => {
     const mockAsignaciones = [{ id: 1, id_rutina: 1, id_usuario: 123, estado: 'en_progreso' }];
 
@@ -92,7 +91,7 @@ describe('Integración Frontend-Backend para Rutinas, Detalle Rutinas y Perfil',
     await expect(fetchAsignaciones(id_usuario)).rejects.toThrow('Error al buscar asignaciones: 500 Server error');
   });
 
-  // === Rutina Detalle: Detalles de Rutina ===
+  //  Rutina Detalle: Detalles de Rutina 
   test('Positiva: carga detalles de rutina correctamente', async () => {
     const mockRutina = { id_rutina: 1, titulo: 'Rutina Cervical', pasos: [{ id_paso: 1, nombre: 'Estiramiento lateral', tiempo_estimado: 5 }] };
 
@@ -124,7 +123,7 @@ describe('Integración Frontend-Backend para Rutinas, Detalle Rutinas y Perfil',
     await expect(fetchRutina(id_rutina)).rejects.toThrow('Error al cargar la rutina: 404 Rutina no encontrada');
   });
 
-  // === Rutina Detalle: Progresos ===
+  // Rutina Detalle: Progresos 
   test('Positiva: carga progresos correctamente', async () => {
     const mockProgresos = [{ id: 1, asignacionId: 1, estado: 'completado', tiempo_usado: 300 }];
 
@@ -156,7 +155,7 @@ describe('Integración Frontend-Backend para Rutinas, Detalle Rutinas y Perfil',
     await expect(fetchProgresos(asignacionId)).rejects.toThrow('Error al cargar progresos: 500 Server error');
   });
 
-  // === Rutina Detalle: Actualizar Progreso ===
+  //  Rutina Detalle: Actualizar Progreso 
   test('Positiva: actualiza progreso correctamente', async () => {
     const mockProgreso = { id: 1, estado: 'en_progreso' };
 
@@ -194,7 +193,7 @@ describe('Integración Frontend-Backend para Rutinas, Detalle Rutinas y Perfil',
     await expect(updateProgreso(progresoId, updateData)).rejects.toThrow('Error al actualizar progreso: 500 Server error');
   });
 
-  // === Rutina Detalle: Actualizar Asignación ===
+  //  Rutina Detalle: Actualizar Asignación 
   test('Positiva: actualiza asignación correctamente', async () => {
     const mockAsignacion = { id: 1, progreso_actual: 50, estado: 'en_progreso' };
 
@@ -232,7 +231,7 @@ describe('Integración Frontend-Backend para Rutinas, Detalle Rutinas y Perfil',
     await expect(updateAsignacion(asignacionId, updateData)).rejects.toThrow('Error al actualizar asignación: 500 Server error');
   });
 
-  // === Rutina Detalle: Reiniciar Asignación ===
+  // Rutina Detalle: Reiniciar Asignación
   test('Positiva: reinicia asignación correctamente', async () => {
     const mockAsignacion = { id: 1, sesion: 2 };
 
@@ -270,7 +269,7 @@ describe('Integración Frontend-Backend para Rutinas, Detalle Rutinas y Perfil',
     await expect(resetAsignacion(asignacionId, updateData)).rejects.toThrow('Error al reiniciar asignación: 500 Server error');
   });
 
-  // === Perfil ===
+  // Perfil
   test('Positiva: actualiza perfil correctamente', async () => {
     const mockPerfil = { id_usuario: 123, nombre: 'Juan', apellidopa: 'Pérez', gmail: 'juan@example.com' };
 
