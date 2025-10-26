@@ -1,7 +1,4 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-
-name: Node.js CI
+name: React Native Expo CI/CD
 
 on:
   push:
@@ -10,15 +7,11 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-
+  test:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         node-version: [18.x, 20.x, 22.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
     steps:
     - uses: actions/checkout@v4
     - name: Use Node.js ${{ matrix.node-version }}
@@ -27,5 +20,20 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
     - run: npm ci
-    - run: npm run build --if-present
-    - run: npm test
+    - run: npm test  # Ejecuta Jest para pruebas unitarias
+
+  build-and-deploy:
+    needs: test  # Solo si tests pasan
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+    - uses: expo/expo-github-action@v8
+      with:
+        expo-version: latest
+        token: ${{ secrets.CODECOV_TOKEN }}
+    - run: npm ci
+    - run: npm run build --if-present  # O expo prebuild
+    - run: expo publish --non-interactive  # Deploy OTA
