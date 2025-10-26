@@ -13,6 +13,7 @@
     "test:coverage": "jest --coverage",
     "test:ci": "jest --coverage --watchAll=false --ci",
     "test:integration": "jest src/utils/__tests__/apiIntegration.test.js --verbose",
+    "test:e2e": "jest --testMatch='**/e2e/**/*.e2e.test.js' --verbose",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
