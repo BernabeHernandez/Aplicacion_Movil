@@ -12,6 +12,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:ci": "jest --coverage --watchAll=false --ci",
+    "test:integration": "jest src/utils/__tests__/apiIntegration.test.js --verbose",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
@@ -71,6 +72,7 @@
     "@testing-library/react-native": "^12.4.3",
     "@types/react": "^19.1.10",
     "@types/react-native": "^0.72.8",
+    "axios-mock-adapter": "^2.1.0",
     "babel-preset-expo": "^54.0.6",
     "eslint": "^9.25.0",
     "eslint-config-expo": "^10.0.0",
