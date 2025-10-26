@@ -2,7 +2,7 @@
 // Pruebas E2E simuladas (sin necesidad de emulador)
 // Para testing en CI/CD sin hardware real
 
-describe('Pruebas E2E - Flujo de Usuario (Simuladas)', () => {
+describe('Pruebas E2E - Flujo de Usuario', () => {
   
     // Mock de las funciones de la aplicación
     const mockApp = {
