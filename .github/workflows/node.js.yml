@@ -59,6 +59,7 @@ jobs:
       - name: Verificar entorno Expo
         run: npx expo-doctor || echo "Verificación de Expo completada"
 
+         # El despliegue final de la aplicación se realiza en Expo
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
@@ -85,7 +86,7 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
       
-      - name: Build y Deploy a Expo
+      - name: Deploy a Expo
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
