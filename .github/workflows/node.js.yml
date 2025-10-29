@@ -59,7 +59,33 @@ jobs:
       - name: Verificar entorno Expo
         run: npx expo-doctor || echo "Verificación de Expo completada"
 
-         # El despliegue final de la aplicación se realiza en Expo
+      - name: Configurar Expo y EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Generar APK para Android
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          echo "Generando APK de Android..."
+          eas build --platform android --profile preview --non-interactive --wait
+
+      - name: Descargar APK generado
+        run: |
+          echo "Descargando APK..."
+          eas build:download --platform android --latest --output ./app-release.apk
+
+      - name: Subir APK como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: ./app-release.apk
+          retention-days: 30
+
+  # El despliegue final de la aplicación se realiza en Expo
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
@@ -90,5 +116,5 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          echo "Iniciando build de Android..."
+          echo "Iniciando build de producción en Expo..."
           eas build --platform android --non-interactive
