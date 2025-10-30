@@ -105,17 +105,17 @@ jobs:
       - name: Verificar APK descargado
         run: |
           if [ -f app-release.apk ]; then
-            echo "✓ APK descargado exitosamente"
+            echo "APK descargado exitosamente"
             ls -lh app-release.apk
           else
-            echo "✗ Error: No se pudo descargar el APK"
+            echo "Error: No se pudo descargar el APK"
             exit 1
           fi
 
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: FarmaMedic-Android
+          name: RehabSoft-Android
           path: app-release.apk
           retention-days: 30
 
@@ -150,7 +150,7 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          echo "Publicando actualización OTA en Expo..."
+          echo "Publicando en Expo..."
           echo "Canal: production"
           echo "Plataforma: Android"
           eas update --branch production --message "Deploy desde GitHub Actions - $(date)" --platform android --non-interactive
