@@ -87,7 +87,8 @@ jobs:
         run: |
           echo "Descargando APK..."
           BUILD_ID=$(eas build:list --platform=android --limit=1 --json --non-interactive | jq -r '.[0].id')
-          eas build:download --id=$BUILD_ID --output=./app-release.apk
+          echo "Build ID: $BUILD_ID"
+          eas build:download --id $BUILD_ID --output ./app-release.apk
 
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
