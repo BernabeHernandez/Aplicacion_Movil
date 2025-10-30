@@ -105,10 +105,10 @@ jobs:
       - name: Verificar APK descargado
         run: |
           if [ -f app-release.apk ]; then
-            echo "APK descargado exitosamente"
+            echo "✓ APK descargado exitosamente"
             ls -lh app-release.apk
           else
-            echo "Error: No se pudo descargar el APK"
+            echo "✗ Error: No se pudo descargar el APK"
             exit 1
           fi
 
@@ -121,7 +121,7 @@ jobs:
 
   # El despliegue final de actualizaciones OTA se realiza en Expo
   deploy:
-    name: Deploy a Expo (OTA Updates)
+    name: Deploy a Expo
     runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -150,6 +150,7 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          echo "📤 Publicando actualización OTA en Expo..."
+          echo "Publicando actualización OTA en Expo..."
           echo "Canal: production"
-          eas update --branch production --message "Deploy desde GitHub Actions - $(date)" --non-interactive
+          echo "Plataforma: Android"
+          eas update --branch production --message "Deploy desde GitHub Actions - $(date)" --platform android --non-interactive
