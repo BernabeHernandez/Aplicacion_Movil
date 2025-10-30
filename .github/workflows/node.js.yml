@@ -80,25 +80,42 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           echo "Generando APK con EAS Build..."
-          echo "⚠️  Esto puede tardar hasta 45 minutos en plan gratuito..."
           eas build --platform android --profile preview --non-interactive --wait
 
       - name: Descargar APK generado
         run: |
-          echo "Descargando APK..."
-          BUILD_ID=$(eas build:list --platform=android --limit=1 --json --non-interactive | jq -r '.[0].id')
-          echo "Build ID: $BUILD_ID"
-          eas build:download $BUILD_ID
+          echo "Obteniendo URL del APK..."
+          BUILD_INFO=$(eas build:list --platform=android --limit=1 --json --non-interactive)
+          BUILD_ID=$(echo $BUILD_INFO | jq -r '.[0].id')
+          ARTIFACT_URL=$(echo $BUILD_INFO | jq -r '.[0].artifacts.buildUrl')
           
-      - name: Renombrar APK descargado
+          echo "Build ID: $BUILD_ID"
+          echo "Artifact URL: $ARTIFACT_URL"
+          
+          if [ "$ARTIFACT_URL" != "null" ] && [ -n "$ARTIFACT_URL" ]; then
+            echo "Descargando APK desde URL..."
+            curl -L -o app-release.apk "$ARTIFACT_URL"
+          else
+            echo "No se encontró URL de descarga. Intentando método alternativo..."
+            eas build:view $BUILD_ID --json > build_details.json
+            ARTIFACT_URL=$(cat build_details.json | jq -r '.artifacts.buildUrl')
+            curl -L -o app-release.apk "$ARTIFACT_URL"
+          fi
+          
+      - name: Verificar APK descargado
         run: |
-          # EAS descarga el archivo con un nombre automático, lo renombramos
-          mv *.apk app-release.apk || echo "APK ya renombrado"
+          if [ -f app-release.apk ]; then
+            echo "APK descargado exitosamente"
+            ls -lh app-release.apk
+          else
+            echo "Error: No se pudo descargar el APK"
+            exit 1
+          fi
 
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-apk
+          name: RehabSoft-android
           path: app-release.apk
           retention-days: 30
 
