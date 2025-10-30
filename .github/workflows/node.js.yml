@@ -80,7 +80,6 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           echo "Generando APK con EAS Build..."
-          echo "⚠️  Esto puede tardar hasta 45 minutos en plan gratuito..."
           eas build --platform android --profile preview --non-interactive --wait
 
       - name: Descargar APK generado
