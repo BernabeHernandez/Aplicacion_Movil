@@ -80,6 +80,7 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           echo "Generando APK con EAS Build..."
+          echo "⚠️  Esto puede tardar hasta 45 minutos en plan gratuito..."
           eas build --platform android --profile preview --non-interactive --wait
 
       - name: Descargar APK generado
@@ -87,13 +88,18 @@ jobs:
           echo "Descargando APK..."
           BUILD_ID=$(eas build:list --platform=android --limit=1 --json --non-interactive | jq -r '.[0].id')
           echo "Build ID: $BUILD_ID"
-          eas build:download --id $BUILD_ID --output ./app-release.apk
+          eas build:download $BUILD_ID
+          
+      - name: Renombrar APK descargado
+        run: |
+          # EAS descarga el archivo con un nombre automático, lo renombramos
+          mv *.apk app-release.apk || echo "APK ya renombrado"
 
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
-          path: android/app/build/outputs/apk/release/app-release.apk
+          path: app-release.apk
           retention-days: 30
 
   # El despliegue final de la aplicación se realiza en Expo
