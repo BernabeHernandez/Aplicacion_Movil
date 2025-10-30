@@ -68,20 +68,26 @@ jobs:
       - name: Configurar Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Configurar Expo
+      - name: Configurar Expo y EAS
         uses: expo/expo-github-action@v8
         with:
           expo-version: latest
+          eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Generar APK local con Expo
+      - name: Generar APK con EAS Build
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          echo "Generando APK localmente..."
-          npx expo prebuild --platform android --clean
-          cd android
-          ./gradlew assembleRelease --no-daemon
+          echo "Generando APK con EAS Build..."
+          echo "⚠️  Esto puede tardar hasta 45 minutos en plan gratuito..."
+          eas build --platform android --profile preview --non-interactive --wait
+
+      - name: Descargar APK generado
+        run: |
+          echo "Descargando APK..."
+          BUILD_ID=$(eas build:list --platform=android --limit=1 --json --non-interactive | jq -r '.[0].id')
+          eas build:download --id=$BUILD_ID --output=./app-release.apk
 
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
