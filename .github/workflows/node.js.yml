@@ -15,7 +15,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20.x
-      - run: npm ci
+          cache: ''
+      - name: Instalar dependencias
+        run: npm ci --prefer-offline --no-audit
       - run: npm run test:ci
 
   pruebas-integracion:
@@ -26,7 +28,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20.x
-      - run: npm ci
+          cache: ''
+      - name: Instalar dependencias
+        run: npm ci --prefer-offline --no-audit
       - run: npm run test:integration
 
   pruebas-e2e:
@@ -37,7 +41,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20.x
-      - run: npm ci
+          cache: ''
+      - name: Instalar dependencias
+        run: npm ci --prefer-offline --no-audit
       - run: npm run test:e2e
 
   build:
@@ -52,9 +58,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
+          cache: ''
 
       - name: Instalar dependencias
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit
 
       - name: Verificar entorno Expo
         run: npx expo-doctor || echo "Verificación de Expo completada"
@@ -119,7 +126,6 @@ jobs:
           path: app-release.apk
           retention-days: 30
 
-  # El despliegue final de actualizaciones OTA se realiza en Expo
   deploy:
     name: Deploy a Expo
     runs-on: ubuntu-latest
@@ -135,9 +141,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
+          cache: ''
       
       - name: Instalar dependencias
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit
       
       - name: Configurar Expo y EAS
         uses: expo/expo-github-action@v8
