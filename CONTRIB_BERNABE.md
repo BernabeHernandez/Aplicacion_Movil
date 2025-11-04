@@ -1,1 +1,2 @@
-"# Contribuci¢n: Bernab‚ Hern ndez\n\n- **Progreso.js**: Gr fica circular con % de cumplimiento" 
+"- **Rutinas.js**: Filtros por dÂ¡a y tipo" 
+"# ContribuciÂ¢n: Bernabâ€š HernÂ ndez\n\n- **Progreso.js**: GrÂ fica circular con % de cumplimiento"
