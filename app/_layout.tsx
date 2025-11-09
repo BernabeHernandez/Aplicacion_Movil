@@ -3,8 +3,9 @@ import { Tabs } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { TextInput, View, Image, StyleSheet, Dimensions } from "react-native";
 import AuthProvider from "./AuthContext";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { AuthContext } from "./AuthContext";
+import { configureGoogleSignIn } from "../src/utils/googleSignIn"; 
 
 const { width: screenWidth } = Dimensions.get("window");
 const searchWidth = Math.min(Math.max(screenWidth * 0.6, 200), 300);
@@ -123,6 +124,11 @@ function TabsLayout() {
 }
 
 export default function RootLayout() {
+  // CONFIGURAR GOOGLE SIGN-IN AL INICIAR LA APP
+  useEffect(() => {
+    configureGoogleSignIn();
+  }, []);
+
   return (
     <AuthProvider>
       <TabsLayout />

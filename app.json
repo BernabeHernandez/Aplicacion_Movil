@@ -18,7 +18,8 @@
       "policy": "sdkVersion"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.bernabehb.MovilCentro"
     },
     "android": {
       "adaptiveIcon": {
@@ -27,7 +28,8 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.bernabehb.MovilCentro",
-      "runtimeVersion": "1.0.0"
+      "runtimeVersion": "1.0.0",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "bundler": "metro",
@@ -44,6 +46,20 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
+      ],
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.16257795217-eichv7uhkfa9hl6vnbd00dmck1mpj8p7"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
       ]
     ],
     "experiments": {
@@ -53,7 +69,8 @@
       "router": {},
       "eas": {
         "projectId": "f5dc3030-446a-4f5c-ab95-68ac74c4776a"
-      }
+      },
+      "webClientId": "16257795217-eichv7uhkfa9hl6vnbd00dmck1mpj8p7.apps.googleusercontent.com"
     }
   }
 }

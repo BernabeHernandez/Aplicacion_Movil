@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "16257795217",
+    "project_id": "rehabsoft-9fd02",
+    "storage_bucket": "rehabsoft-9fd02.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:16257795217:android:1c744a697f5b62188f2b30",
+        "android_client_info": {
+          "package_name": "com.bernabehb.MovilCentro"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "16257795217-45pnvjthpvtfmimdjc9amar751qol70r.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bernabehb.MovilCentro",
+            "certificate_hash": "0e9c6d18a38309f2be43931e64d419ecdbc61482"
+          }
+        },
+        {
+          "client_id": "16257795217-eichv7uhkfa9hl6vnbd00dmck1mpj8p7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAvtTni24TZfVzUqN38Lov5Uc9BAWDePo8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "16257795217-eichv7uhkfa9hl6vnbd00dmck1mpj8p7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
