@@ -4,10 +4,15 @@
     "slug": "MovilCentro",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/logo.png",
     "scheme": "movilcentro",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/logo.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#ffffff"
+    },
     "updates": {
       "url": "https://u.expo.dev/f5dc3030-446a-4f5c-ab95-68ac74c4776a",
       "enabled": true,
@@ -19,11 +24,21 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.bernabehb.MovilCentro"
+      "bundleIdentifier": "com.bernabehb.MovilCentro",
+      "splash": {
+        "image": "./assets/images/logo.png",
+        "resizeMode": "cover",
+        "backgroundColor": "#ffffff"
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/logo.png",
+        "backgroundColor": "#ffffff"
+      },
+      "splash": {
+        "image": "./assets/images/logo.png",
+        "resizeMode": "cover",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
@@ -41,9 +56,9 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
+          "image": "./assets/images/logo.png",
+          "imageWidth": 250,
+          "resizeMode": "cover",
           "backgroundColor": "#ffffff"
         }
       ],

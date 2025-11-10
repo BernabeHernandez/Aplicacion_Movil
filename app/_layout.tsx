@@ -46,7 +46,11 @@ function TabsLayout() {
         ),
         tabBarStyle: styles.tabBar,
         tabBarActiveTintColor: "#1976D2",
-        tabBarInactiveTintColor: "#666",
+        tabBarInactiveTintColor: "#333",
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: "600",
+        },
       }}
     >
       {/* Pantalla de Login - Solo visible si NO está autenticado */}

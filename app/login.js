@@ -14,7 +14,8 @@ export default function Login() {
   const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loadingNormal, setLoadingNormal] = useState(false);
+  const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [expoPushToken, setExpoPushToken] = useState("");
   const router = useRouter();
   const { login } = useContext(AuthContext);
@@ -46,7 +47,7 @@ export default function Login() {
       return;
     }
 
-    setLoading(true);
+    setLoadingNormal(true);
 
     try {
       const res = await fetch("https://backendcentro.onrender.com/api/login", {
@@ -59,7 +60,7 @@ export default function Login() {
       let data = {};
       try { data = text ? JSON.parse(text) : {}; } catch (e) { console.error('JSON inválido:', text); }
 
-      setLoading(false);
+      setLoadingNormal(false);
 
       if (!res.ok) {
         if (data.lockTimeLeft) {
@@ -85,7 +86,7 @@ export default function Login() {
       login({ id: data.id_usuario, tipo: data.tipo, user: data.user });
       router.replace("/home");
     } catch (err) {
-      setLoading(false);
+      setLoadingNormal(false);
       console.error("Error en login:", err);
       Alert.alert("Error", "No se pudo conectar al servidor");
     }
@@ -94,7 +95,7 @@ export default function Login() {
   //LOGIN CON GOOGLE
   const handleGoogleLogin = async () => {
     try {
-      setLoading(true);
+      setLoadingGoogle(true);
 
       // Verificar Play Services
       await GoogleSignin.hasPlayServices();
@@ -109,7 +110,7 @@ export default function Login() {
       if (!idToken) {
         console.error('No se obtuvo idToken. userInfo:', JSON.stringify(userInfo, null, 2));
         Alert.alert("Error", "No se pudo obtener el token de Google");
-        setLoading(false);
+        setLoadingGoogle(false);
         return;
       }
 
@@ -181,7 +182,7 @@ export default function Login() {
         Alert.alert("Error", "No se pudo iniciar con Google. Intenta de nuevo.");
       }
     } finally {
-      setLoading(false);
+      setLoadingGoogle(false);
     }
   };
 
@@ -191,23 +192,38 @@ export default function Login() {
         <Text style={styles.title}>Bienvenido</Text>
         <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
 
-        <TextInput style={styles.input} placeholder="Usuario" value={user} onChangeText={setUser} autoCapitalize="none" placeholderTextColor="#aaa" />
+        <TextInput 
+          style={styles.input} 
+          placeholder="Usuario" 
+          value={user} 
+          onChangeText={setUser} 
+          autoCapitalize="none" 
+          placeholderTextColor="#aaa" 
+        />
 
         <View style={styles.passwordContainer}>
-          <TextInput style={styles.passwordInput} placeholder="Contraseña" secureTextEntry={!showPassword} value={password} onChangeText={setPassword} placeholderTextColor="#aaa" />
+          <TextInput 
+            style={styles.passwordInput} 
+            placeholder="Contraseña" 
+            secureTextEntry={!showPassword}
+            value={password} 
+            onChangeText={setPassword} 
+            placeholderTextColor="#aaa"
+            autoCapitalize="none"
+          />
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.iconButton}>
             <Ionicons name={showPassword ? "eye-off" : "eye"} size={22} color="#1E90FF" />
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-          <Text style={styles.buttonText}>{loading ? "Ingresando..." : "Ingresar"}</Text>
+        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loadingNormal || loadingGoogle}>
+          <Text style={styles.buttonText}>{loadingNormal ? "Ingresando..." : "Ingresar"}</Text>
         </TouchableOpacity>
 
         {/* BOTÓN DE GOOGLE */}
-        <TouchableOpacity style={[styles.button, styles.googleButton]} onPress={handleGoogleLogin} disabled={loading}>
+        <TouchableOpacity style={[styles.button, styles.googleButton]} onPress={handleGoogleLogin} disabled={loadingNormal || loadingGoogle}>
           <Image source={require("../assets/images/logo1.png")} style={styles.googleIcon} />
-          <Text style={styles.googleButtonText}>{loading ? "Conectando..." : "Continuar con Google"}</Text>
+          <Text style={styles.googleButtonText}>{loadingGoogle ? "Conectando..." : "Continuar con Google"}</Text>
         </TouchableOpacity>
 
         <View style={styles.linksContainer}>
@@ -228,9 +244,31 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 30 },
   title: { fontSize: 32, fontWeight: "700", color: "#222", marginBottom: 5, textAlign: "center" },
   subtitle: { fontSize: 16, color: "#555", marginBottom: 30, textAlign: "center" },
-  input: { height: 50, borderColor: "#ddd", borderWidth: 1, borderRadius: 10, paddingHorizontal: 15, marginBottom: 15, backgroundColor: "#fff" },
-  passwordContainer: { flexDirection: "row", alignItems: "center", borderColor: "#ddd", borderWidth: 1, borderRadius: 10, marginBottom: 15, backgroundColor: "#fff" },
-  passwordInput: { flex: 1, height: 50, paddingHorizontal: 15 },
+  input: { 
+    height: 50, 
+    borderColor: "#ddd", 
+    borderWidth: 1, 
+    borderRadius: 10, 
+    paddingHorizontal: 15, 
+    marginBottom: 15, 
+    backgroundColor: "#fff",
+    color: "#000"
+  },
+  passwordContainer: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    borderColor: "#ddd", 
+    borderWidth: 1, 
+    borderRadius: 10, 
+    marginBottom: 15, 
+    backgroundColor: "#fff" 
+  },
+  passwordInput: { 
+    flex: 1, 
+    height: 50, 
+    paddingHorizontal: 15,
+    color: "#000"
+  },
   iconButton: { paddingHorizontal: 15, justifyContent: "center", alignItems: "center" },
   button: { backgroundColor: "#007AFF", paddingVertical: 15, borderRadius: 10, alignItems: "center", marginBottom: 15 },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
