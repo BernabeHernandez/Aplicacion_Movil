@@ -79,7 +79,6 @@ const Rutinas = () => {
         <View style={styles.headerContent}>
           <View>
             <Text style={styles.headerTitle}>RehabBuddy</Text>
-            <Text style={styles.headerSubtitle}>Centro de Rehabilitación San Juan</Text>
           </View>
         </View>
       </View>

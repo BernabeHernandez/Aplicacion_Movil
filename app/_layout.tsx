@@ -1,14 +1,13 @@
 // app/_layout.tsx
 import { Tabs } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
-import { TextInput, View, Image, StyleSheet, Dimensions } from "react-native";
+import { View, Image, StyleSheet, Dimensions, Text } from "react-native";
 import AuthProvider from "./AuthContext";
 import { useContext, useEffect } from "react";
 import { AuthContext } from "./AuthContext";
-import { configureGoogleSignIn } from "../src/utils/googleSignIn"; 
+import { configureGoogleSignIn } from "../src/utils/googleSignIn";
 
 const { width: screenWidth } = Dimensions.get("window");
-const searchWidth = Math.min(Math.max(screenWidth * 0.6, 200), 300);
 
 function TabsLayout() {
   const { id_usuario } = useContext(AuthContext);
@@ -17,26 +16,19 @@ function TabsLayout() {
     <Tabs
       screenOptions={{
         headerTitle: () => (
-          <View style={[styles.searchWrapper, { width: searchWidth }]}>
-            <MaterialIcons
-              name="search"
-              size={20}
-              color="#999"
-              style={styles.searchIcon}
-            />
-            <TextInput
-              placeholder="Buscar rutinas, ejercicios..."
-              placeholderTextColor="#999"
-              style={styles.searchBar}
-            />
-          </View>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            Centro de Rehabilitación Integral San Juan
+          </Text>
         ),
         headerTitleAlign: "center",
-        headerTitleContainerStyle: {
-          flex: 1,
-          alignItems: "center",
+
+        headerLeftContainerStyle: {
+          width: 40,
         },
-        headerRight: () => (
+
+        headerRight: () => <View style={{ width: 40 }} />,
+
+        headerLeft: () => (
           <View style={styles.logoContainer}>
             <Image
               source={require("../assets/images/logo.png")}
@@ -44,6 +36,7 @@ function TabsLayout() {
             />
           </View>
         ),
+
         tabBarStyle: styles.tabBar,
         tabBarActiveTintColor: "#1976D2",
         tabBarInactiveTintColor: "#333",
@@ -53,7 +46,7 @@ function TabsLayout() {
         },
       }}
     >
-      {/* Pantalla de Login - Solo visible si NO está autenticado */}
+      {/* Pantalla de Login */}
       <Tabs.Screen
         name="login"
         options={{
@@ -65,7 +58,7 @@ function TabsLayout() {
         }}
       />
 
-      {/* Pantallas principales - Solo visibles si está autenticado */}
+      {/* Pantallas principales */}
       <Tabs.Screen
         name="home"
         options={{
@@ -117,7 +110,7 @@ function TabsLayout() {
         }}
       />
 
-      {/* Pantallas ocultas del tab bar */}
+      {/* Pantallas ocultas */}
       <Tabs.Screen name="index" options={{ href: null }} />
       <Tabs.Screen name="RutinaDetalle" options={{ href: null }} />
       <Tabs.Screen name="+not-found" options={{ href: null }} />
@@ -128,7 +121,6 @@ function TabsLayout() {
 }
 
 export default function RootLayout() {
-  // CONFIGURAR GOOGLE SIGN-IN AL INICIAR LA APP
   useEffect(() => {
     configureGoogleSignIn();
   }, []);
@@ -141,34 +133,19 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  searchWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f0f0f0",
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    height: 40,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  searchIcon: {
-    marginRight: 5,
-  },
-  searchBar: {
-    flex: 1,
-    fontSize: 14,
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "600",
     color: "#333",
-    paddingVertical: 0,
+    textAlign: "center",
+    flexShrink: 1,
   },
   logoContainer: {
-    marginRight: 15,
+    
   },
   logo: {
-    width: 36,
-    height: 36,
+    width: 55,
+    height: 55,
     resizeMode: "contain",
   },
   tabBar: {
