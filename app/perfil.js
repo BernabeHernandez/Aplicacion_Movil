@@ -104,7 +104,7 @@ const Perfil = () => {
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <View>
-              <Text style={styles.headerTitle}>RehabBuddy</Text>
+              <Text style={styles.headerTitle}>RehabSoft</Text>
             </View>
             <View style={styles.avatarContainer}></View>
           </View>

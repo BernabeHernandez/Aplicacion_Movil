@@ -452,7 +452,7 @@ const RutinaDetalle = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor="#7CB342" barStyle="light-content" />
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>RehabBuddy</Text>
+        <Text style={styles.headerTitle}>RehabSoft</Text>
       </View>
       <View style={styles.navHeader}>
         <TouchableOpacity style={styles.backButton}>

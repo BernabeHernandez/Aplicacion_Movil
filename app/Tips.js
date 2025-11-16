@@ -70,7 +70,7 @@ const Tips = () => {
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View>
-            <Text style={styles.headerTitle}>RehabBuddy</Text>
+            <Text style={styles.headerTitle}>RehabSoft</Text>
           </View>
         </View>
       </View>
